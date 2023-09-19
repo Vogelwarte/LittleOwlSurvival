@@ -103,6 +103,9 @@ known.male.ratio<-table(sex)[3]/sum(table(sex)[c(1,3)])
 sex[!(sex %in% c(0,1))]<-rbinom(n=table(sex)[2],size=1,prob=known.male.ratio)
 
 
+### CALCULATE PRIMITIVE SURVIVAL AS % OF INDIVIDUALS RECORDED IN LAST OCCASION - important for first line in manuscript
+sum(y[,dim(y)[2]])/dim(y)[1]
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # CREATE MATRIX FOR RECAPTURE PROBS
@@ -294,7 +297,7 @@ null.model$summary$quantiles[13,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.p.win","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.simpleage","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
