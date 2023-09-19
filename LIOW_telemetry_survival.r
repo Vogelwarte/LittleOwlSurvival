@@ -88,11 +88,11 @@ f <- apply(CH, 1, get.first)
 
 ### PREPARE WINTER COVARIATES
 allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
+  group_by(variable) %>%
+  mutate(value=scale(value)[,1]) %>%   ## scale all variables for better estimation
+  ungroup() %>%
   spread(key=occ, value=value) %>%
   arrange(variable,year)
-
-unique(allcov$snow)
-
 
 
 ### PREPARE SEX COVARIATE
@@ -275,9 +275,9 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 #                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.simpleage","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_null_3stage.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
