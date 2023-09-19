@@ -77,7 +77,7 @@ for(col in 2:N.occ){
  agemat[,col]<-agemat[,col-1]+14
 }
 age_scale<-scale(agemat)
-simple_age_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
+simpleage_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
 weight <- LIOWch[,6] # residual weight (seems to be standardized already)
 size <- LIOWch[,7] # residual tarsus (seems to be standardized already)
 
@@ -133,7 +133,7 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.age*simpleage[i] + beta.male*sex[i] + epsilon[i]    ## beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.simpleage*simpleage[i] + beta.male*sex[i] + epsilon[i]    ## beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ## beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -148,7 +148,7 @@ for (i in 1:nind){
   }
    
    for (y in 1:2) {
-    mean.p[y] ~ dunif(0, 1)                     # Prior for mean recapture
+    mean.p[y] ~ dunif(0.5, 1)                     # Prior for mean recapture
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
@@ -223,7 +223,9 @@ INPUT <- list(y = CH, f = f,
               recap.mat=recap.mat,
               season=season,
               #age=age_scale,
-              size=size,
+              simpleage=as.numeric(simpleage_scale),
+              sex=sex,
+              #size=size,
               year=as.numeric(year),#weight=weight,
               env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover3"))[,3:25]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
@@ -242,10 +244,10 @@ cjs.init.z <- function(ch,f){
   return(ch)
 }
 
-inits <- function(){list(z = cjs.init.z(CH, f), mean.phi = runif(3, 0, 1), mean.p = runif(2, 0, 1), sigma = runif(1, 0, 2))}  
+inits <- function(){list(z = cjs.init.z(CH, f), mean.phi = runif(3, 0.8, 1), mean.p = runif(2, 0.5, 1), sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.simpleage","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -257,7 +259,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
