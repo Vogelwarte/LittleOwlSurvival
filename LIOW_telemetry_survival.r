@@ -23,6 +23,8 @@
 ## monthly survival: 0.83 - 0.98 (Thorup 2010: https://link.springer.com/article/10.1007/s10336-012-0885-4/tables/2
 
 
+## REVISED 19 SEPT 2023: need to include age as offset (single value) and sex (Tschumi et al. 2019)
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -67,7 +69,7 @@ year <- as.numeric(LIOWch$year)-2008
 #season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
 season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
 winter<-ifelse(season==2,1,0) ## binary variable for winter 
-sex <- LIOWch[,4]
+
 age <- LIOWch[,5]   # age in days on 1 Aug
 agemat<-CH
 agemat[,1]<-age
@@ -75,6 +77,7 @@ for(col in 2:N.occ){
  agemat[,col]<-agemat[,col-1]+14
 }
 age_scale<-scale(agemat)
+simple_age_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
 weight <- LIOWch[,6] # residual weight (seems to be standardized already)
 size <- LIOWch[,7] # residual tarsus (seems to be standardized already)
 
@@ -89,6 +92,17 @@ allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
   arrange(variable,year)
 
 unique(allcov$snow)
+
+
+
+### PREPARE SEX COVARIATE
+## 8 individuals do not have an assigned sex, so we use the overall proportion and then randomly allocate birds to a sex
+sex <- LIOWch[,4]
+table(sex)
+known.male.ratio<-table(sex)[3]/sum(table(sex)[c(1,3)])
+sex[!(sex %in% c(0,1))]<-rbinom(n=table(sex)[2],size=1,prob=known.male.ratio)
+
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # CREATE MATRIX FOR RECAPTURE PROBS
@@ -112,14 +126,14 @@ recap.mat[year==1,c(14,19,20,21)] <- 3
 
 
 # Specify model in JAGS language
-sink("LIOW_CJS_model_p_var_3stage.jags")
+sink("LIOW_CJS_model_p_var_3stage_simpleage_sex.jags")
 cat("
 model {
 
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + epsilon[i]    ## beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.age*simpleage[i] + beta.male*sex[i] + epsilon[i]    ## beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ## beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -146,13 +160,13 @@ tau.p <- pow(sigma.p, -2)
 
 for (y in 1:3) {
  beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect 
- #beta.p.yr[y] ~ dnorm(0, 1)                     # Prior for year effect
- #epsilon.p[y] ~ dnorm(0, tau.p)
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
 #beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
+beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
+beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dnorm(0, 1)                     # Prior for winter weather effect
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
 
