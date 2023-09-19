@@ -150,8 +150,9 @@ for (i in 1:nind){
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
+   mean.p[1] ~ dunif(0.9, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
    for (y in 1:2) {
-    mean.p[y] ~ dunif(0.5, 1)                     # Prior for mean recapture
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
@@ -247,7 +248,10 @@ cjs.init.z <- function(ch,f){
   return(ch)
 }
 
-inits <- function(){list(z = cjs.init.z(CH, f), mean.phi = runif(3, 0.8, 1), mean.p = runif(2, 0.5, 1), sigma = runif(1, 0, 2))}  
+inits <- function(){list(z = cjs.init.z(CH, f),
+                         mean.phi = runif(3, 0.8, 1),
+                         mean.p = c(runif(1, 0.9, 1),runif(1, 0.3, 0.9)),
+                         sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
 parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.simpleage","beta.win","beta.p.win","deviance","fit","fit.rep")
