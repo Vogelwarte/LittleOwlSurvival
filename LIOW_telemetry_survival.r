@@ -432,10 +432,10 @@ for(s in 1:nrow(MCMCout)) {
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
-    ##BACKTRANSFORM TO NORMAL SCALE
+    ## BACKTRANSFORM TO NORMAL SCALE
     mutate(surv=plogis(logit.surv)) %>%
     
-    ##CALCULATE ANNUAL SURVIVAL
+    ## RENAME THE SEASONS
     mutate(Season=ifelse(season==1,"Dispersal",
                          ifelse(season==2,"Winter","Breeding"))) %>%
     mutate(simul=s)              
@@ -485,68 +485,81 @@ ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CUMULATIVE SURVIVAL PREDICTION FOR FIRST YEAR LITTLE OWLS
+# CUMULATIVE ANNUAL SURVIVAL PREDICTION FOR FIRST YEAR LITTLE OWLS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
+# ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
+# 
+# AnnTab<-data.frame(season=c(1,2,3),
+#                    age=mean(age),
+#                    sex=1,
+#                    snow=-0.791) %>%     
+#   mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
+# 
+# Xin<-AnnTab
+# 
+# ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
+# 
+# MCMCpred2<-data.frame()
+# for(s in 1:nrow(MCMCout)) {
+#   
+#   X<-  Xin %>%
+#     
+#     ##CALCULATE MONTHLY SURVIVAL
+#     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
+#              as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
+#              as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
+#              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
+#              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
+#     
+#     ##BACKTRANSFORM TO NORMAL SCALE
+#     mutate(surv=plogis(logit.surv)) %>%
+#     
+#     ##CALCULATE ANNUAL SURVIVAL
+#     mutate(Season=ifelse(season==1,"Dispersal",
+#                          ifelse(season==2,"Winter","Breeding"))) %>%
+#     
+#     mutate(surv=ifelse(season==1,surv^6,
+#                          ifelse(season==2,surv^10,surv^7))) %>%
+#     mutate(simul=s)              
+#   
+#   MCMCpred2<-rbind(MCMCpred2,as.data.frame(X)) 
+#   
+# }
 
-AnnTab<-data.frame(season=c(1,2,3),
-                   age=mean(age),
-                   sex=1,
-                   snow=-0.791) %>%     
-  mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
 
-Xin<-AnnTab
+stage.surv<-  plotdat %>%
+  mutate(dur=c(7,6,10,10,10,10)) %>%
+  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
+stage.surv
 
-### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
+### ANNUAL SURVIVAL IN MILD YEAR
+c(prod(stage.surv[1:3,4])*0.55,prod(stage.surv[1:3,5])*0.55,prod(stage.surv[1:3,6])*0.55)
 
-MCMCpred2<-data.frame()
-for(s in 1:nrow(MCMCout)) {
-  
-  X<-  Xin %>%
-    
-    ##CALCULATE MONTHLY SURVIVAL
-    mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
-             as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
-             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
-    
-    ##BACKTRANSFORM TO NORMAL SCALE
-    mutate(surv=plogis(logit.surv)) %>%
-    
-    ##CALCULATE ANNUAL SURVIVAL
-    mutate(Season=ifelse(season==1,"Dispersal",
-                         ifelse(season==2,"Winter","Breeding"))) %>%
-    
-    mutate(surv=ifelse(season==1,surv^6,
-                         ifelse(season==2,surv^10,surv^7))) %>%
-    mutate(simul=s)              
-  
-  MCMCpred2<-rbind(MCMCpred2,as.data.frame(X)) 
-  
-}
+### ANNUAL SURVIVAL IN SEVERE WINTER YEAR
+c(prod(stage.surv[c(1,2,6),4])*0.55,prod(stage.surv[c(1,2,6),5])*0.55,prod(stage.surv[c(1,2,6),6])*0.55)
 
-
-cumul.surv<-  MCMCpred2 %>%   rename(raw.surv=surv) %>%
-  group_by(simul,Season) %>%
-  summarise(seas.surv=prod(raw.surv)) %>%
-  group_by(Season) %>%
-  summarise(surv=quantile(seas.surv,0.5),surv.lcl=quantile(seas.surv,0.025),surv.ucl=quantile(seas.surv,0.975))
-cumul.surv
-
-ann.surv<-  MCMCpred2 %>%   rename(raw.surv=surv) %>%
-  group_by(simul) %>%
-  summarise(ann.surv=prod(raw.surv)) %>%
-  ungroup() %>%
-  summarise(surv=quantile(ann.surv,0.5),surv.lcl=quantile(ann.surv,0.025),surv.ucl=quantile(ann.surv,0.975))
-ann.surv
+# ann.surv<- MCMCpred2 %>%
+#   group_by(simul) %>%
+#   summarise(ann.surv=prod(raw.surv)*0.55) %>%
+#   ungroup() %>%
+#   summarise(surv=quantile(ann.surv,0.5),surv.lcl=quantile(ann.surv,0.025),surv.ucl=quantile(ann.surv,0.975))
+# ann.surv
 
 
 
 
 # save.image("LIOW_survival_output.RData")
 # load("LIOW_survival_output.RData")
+
+
+
+
+
+
+
+
+
 
 
 
