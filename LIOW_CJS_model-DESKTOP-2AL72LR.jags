@@ -1,0 +1,43 @@
+
+model {
+
+# Priors and constraints
+for (i in 1:nind){
+   for (t in f[i]:(n.occasions-1)){
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr*year[i] + beta.size*size[i] + beta.age*age[i,t] + epsilon[i]    ## beta.mass*weight[i] + 
+      p[i,t] <- mean.p
+      } #t
+   } #i
+for (i in 1:nind){
+   epsilon[i] ~ dnorm(0, tau)
+}
+   
+  for (s in 1:4){   ### baseline for the 4 seasons dispersal, winter, incubation, brood rearing
+   mean.phi[s] ~ dunif(0, 1)                   # Prior for mean survival
+   mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
+   }
+
+sigma ~ dunif(0, 5)                      # Prior for standard deviation
+tau <- pow(sigma, -2)
+sigma2 <- pow(sigma, 2)
+mean.p ~ dunif(0, 1)                     # Prior for mean recapture 
+beta.yr ~ dnorm(0, 1)                     # Prior for year effect 
+beta.size ~ dnorm(0, 1)                     # Prior for size effect 
+beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+#beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
+
+# Likelihood 
+for (i in 1:nind){
+   # Define latent state at first capture
+   z[i,f[i]] <- 1
+   for (t in (f[i]+1):n.occasions){
+      # State process
+      z[i,t] ~ dbern(mu1[i,t])
+      mu1[i,t] <- phi[i,t-1] * z[i,t-1]
+      # Observation process
+      y[i,t] ~ dbern(mu2[i,t])
+      mu2[i,t] <- p[i,t-1] * z[i,t]
+      } #t
+   } #i
+}
+
