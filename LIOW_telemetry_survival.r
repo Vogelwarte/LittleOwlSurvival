@@ -536,7 +536,7 @@ winter.vars<-expand.grid(var=unique(allcov$variable),size=c("size","mass","none"
                          beta_size=0, beta_size_lcl=0,beta_size_ucl=0,
                          beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0)
 param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age")
-for(s in 12:dim(winter.vars)[1]){
+for(s in 24:dim(winter.vars)[1]){
 
   INPUT <- list(y = CH, f = f,
                 nind = dim(CH)[1],
@@ -616,7 +616,6 @@ if(winter.vars$age[s]== "yes"){
   	winter.vars[s,13:15]<-modelfit$summary$quantiles[4,c(3,1,5)]
 	}else{winter.vars[s,13:15]<-modelfit$summary$quantiles[3,c(3,1,5)]}
 }
-
 
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table_v2.csv")
 } ### end loop over all models
