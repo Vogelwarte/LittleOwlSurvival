@@ -295,14 +295,14 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[14,c(3,1,5)] +2 <
-null.model$summary$quantiles[13,c(3,1,5)]
+full.model$summary$quantiles[16,c(3,1,5)] +2 <
+null.model$summary$quantiles[15,c(3,1,5)]
 
 
 
 #### MODEL ASSESSMENT ####
 MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.simpleage","beta.p.win","mean.p"))
-MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","mean.p"))
+MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
@@ -409,11 +409,12 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
 AnnTab<-data.frame(season=c(1,2,2,2,2,3),
-                   age=c(98,180,190,200,210,300),
-                   year=2,
+                   day=c(98,180,190,200,210,300),
+                   age=mean(age),
+                   sex=1,
                    #size=0,
-                   snow=c(0,0,3,6,9,0)) %>%     
-  mutate(scaleage=(age-attr(age_scale, 'scaled:center')[13])/attr(age_scale, 'scaled:scale')[1])
+                   snow=scale(c(0,0,3,6,9,0))[,1]) %>%     
+  mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
 
 Xin<-AnnTab
 
@@ -426,9 +427,9 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
+             as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
-             #as.numeric(MCMCout[s,match("beta.size",parmcols)])*size +
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ##BACKTRANSFORM TO NORMAL SCALE
@@ -446,18 +447,20 @@ for(s in 1:nrow(MCMCout)) {
 ### CREATE PLOT
 
 plotdat<-  MCMCpred %>%   rename(raw.surv=surv) %>%
-  group_by(Season,age,snow) %>%
-  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975))
+  group_by(Season,day,snow) %>%
+  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  ungroup() %>%
+  mutate(snow=c(0,0,0,3,6,9))
 
  
 ggplot(plotdat)+
-  geom_errorbar(aes(x=age, ymin=surv.lcl, ymax=surv.ucl, colour=factor(snow)), width=0.2) +   ##, type=Origin
-  geom_point(aes(x=age, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
+  geom_errorbar(aes(x=day, ymin=surv.lcl, ymax=surv.ucl, colour=factor(snow)), width=0.2) +   ##, type=Origin
+  geom_point(aes(x=day, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
   
   ## format axis ticks
-  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1:2,4)], labels=plotdat$Season[c(1:2,4)]) +
+  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$day[c(1:2,4)], labels=plotdat$Season[c(1:2,4)]) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
-  labs(y="Fortnightly survival probability") +
+  labs(y="Biweekly survival probability") +
   scale_colour_manual(name="Days of \nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
                       breaks=c(0,3,6,9),labels=c(0,3,6,9)) +
   
@@ -470,12 +473,13 @@ ggplot(plotdat)+
         legend.title=element_text(size=16, color="black"),
         legend.background=element_blank(),
         legend.key = element_rect(fill = NA),
-        legend.position=c(0.62,0.18), 
+        legend.position=c(0.12,0.18), 
         strip.text=element_text(size=18, color="black"), 
         strip.background=element_rect(fill="white", colour="black"))
 
 
 ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/Seasonal_survival_LIOW_noage.jpg", height=7, width=11)
+ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 
 
 
@@ -486,25 +490,26 @@ ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/Se
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
-AnnTab2<-data.frame(season=season,
-                   age=seq(from=mean(age),by=14,length.out=length(season)),
-                   year=3,
-                   size=0,
-                   snow=0) %>%     
-  mutate(scaleage=(age-attr(age_scale, 'scaled:center')[13])/attr(age_scale, 'scaled:scale')[1])
+AnnTab<-data.frame(season=c(1,2,3),
+                   age=mean(age),
+                   sex=1,
+                   snow=-0.791) %>%     
+  mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
+
+Xin<-AnnTab
 
 ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
 
 MCMCpred2<-data.frame()
 for(s in 1:nrow(MCMCout)) {
   
-  X<-  AnnTab2 %>%
+  X<-  Xin %>%
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
-             as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)]) + ### *year +
-             #as.numeric(MCMCout[s,match("beta.size",parmcols)])*size +
+             as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
+             as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ##BACKTRANSFORM TO NORMAL SCALE
@@ -513,11 +518,15 @@ for(s in 1:nrow(MCMCout)) {
     ##CALCULATE ANNUAL SURVIVAL
     mutate(Season=ifelse(season==1,"Dispersal",
                          ifelse(season==2,"Winter","Breeding"))) %>%
+    
+    mutate(surv=ifelse(season==1,surv^6,
+                         ifelse(season==2,surv^10,surv^7))) %>%
     mutate(simul=s)              
   
   MCMCpred2<-rbind(MCMCpred2,as.data.frame(X)) 
   
 }
+
 
 cumul.surv<-  MCMCpred2 %>%   rename(raw.surv=surv) %>%
   group_by(simul,Season) %>%
