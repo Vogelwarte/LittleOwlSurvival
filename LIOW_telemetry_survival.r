@@ -547,21 +547,21 @@ c(prod(stage.surv[c(1,2,6),4])*0.55,prod(stage.surv[c(1,2,6),5])*0.55,prod(stage
 # ann.surv
 
 
-Table1<- stage.surv[1:3,] %>%
-  mutate(mild.survival=sprintf("%s (%s – %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+Table1<- stage.surv[c(2,3,1),] %>%
+  mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   mutate(Duration=dur*2) %>%
   select(Season,Duration,mild.survival) %>%
   bind_rows(data.frame(Season="Annual",Duration=52,
-                       mild.survival=sprintf("%s (%s – %s)",
+                       mild.survival=sprintf("%s (%s - %s)",
                                         round(prod(stage.surv[1:3,4])*0.55,3),
                                         round(prod(stage.surv[1:3,5])*0.55,3),
                                         round(prod(stage.surv[1:3,6])*0.55,3))))
 
-Table1<- stage.surv[c(1,2,6),] %>%
-  mutate(harsh.survival=sprintf("%s (%s – %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+Table1<- stage.surv[c(2,6,1),] %>%
+  mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   select(Season,harsh.survival) %>%
   bind_rows(data.frame(Season="Annual",
-                       harsh.survival=sprintf("%s (%s – %s)",
+                       harsh.survival=sprintf("%s (%s - %s)",
                                         round(prod(stage.surv[c(1,2,6),4])*0.55,3),
                                         round(prod(stage.surv[c(1,2,6),5])*0.55,3),
                                         round(prod(stage.surv[c(1,2,6),6])*0.55,3))))  %>%
