@@ -129,14 +129,14 @@ recap.mat[year==1,c(14,19,20,21)] <- 3
 
 
 # Specify model in JAGS language
-sink("LIOW_CJS_model_p_var_3stage_simpleage_sex.jags")
+sink("LIOW_CJS_model_p_var_3stage_sex.jags")
 cat("
 model {
 
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.simpleage*simpleage[i] + beta.male*sex[i] + epsilon[i]    ## beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ## beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ## beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -169,7 +169,7 @@ for (y in 1:3) {
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
 #beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
-beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
+#beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
@@ -254,7 +254,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.simpleage","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -275,7 +275,7 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 #                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.simpleage","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
                     model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
@@ -665,14 +665,27 @@ if(winter.vars$age[s]== "yes"){
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table_v2.csv")
 } ### end loop over all models
 
-
+winter.vars<-fread("LIOW_win_var_selection_DIC_table_v2.csv")
 winter.vars<-winter.vars %>% 
-  # rename(dic_med=dic_lcl) %>%
-#   rename(dic_lcl=dic) %>%
-#   rename(beta_med=beta_lcl) %>%
-#   rename(beta_lcl=beta) 
-  arrange(dic_med)
-fwrite(winter.vars,"LIOW_win_var_selection_DIC_table.csv")
+  mutate(DIC=if_else(age=="yes",if_else(size=="none",dic_med+2,dic_med+4),if_else(size=="none",dic_med,dic_med+2))) %>%
+  arrange(DIC)
+
+winter.vars
+
+
+## create TABLE S1
+
+TABLES1 <- winter.vars %>%
+  mutate(winter.effect=sprintf("%s (%s - %s)",round(beta_med,3),round(beta_lcl,3),round(beta_ucl,3))) %>%
+  mutate(size.effect=sprintf("%s (%s - %s)",round(beta_size,3),round(beta_size_lcl,3),round(beta_size_ucl,3))) %>%
+  mutate(age.effect=sprintf("%s (%s - %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
+  mutate(age.effect=if_else(age=="no","",age.effect)) %>%
+  mutate(size.effect=if_else(size=="none","",size.effect)) %>%
+  arrange(DIC) %>%
+  select(var,size,age,DIC,winter.effect,size.effect,age.effect) %>%
+  rename(Winter.variable=var)
+TABLES1
+fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
 
 #### MODEL SELECTION VIA DIC ####
 ## follow post by Bob O'Hara
