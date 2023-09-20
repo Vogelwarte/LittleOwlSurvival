@@ -589,7 +589,7 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE- completed on 11 Aug 2023
+# EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### re-run with revised model on 21 Aug
 ### re-run with revised model and age, sex, and size variables on 18 Sept 2023
@@ -604,8 +604,8 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 winter.vars<-expand.grid(var=unique(allcov$variable),size=c("size","mass","none"),age=c("yes","no"),dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0,
                          beta_size=0, beta_size_lcl=0,beta_size_ucl=0,
                          beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0)
-param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age")
-for(s in 24:dim(winter.vars)[1]){
+param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.simpleage")
+for(s in 1:dim(winter.vars)[1]){
 
   INPUT <- list(y = CH, f = f,
                 nind = dim(CH)[1],
@@ -613,7 +613,8 @@ for(s in 24:dim(winter.vars)[1]){
                 z = known.state.cjs(CH),
                 recap.mat=recap.mat,
                 season=season,
-                age=age_scale,
+                simpleage=as.numeric(simpleage_scale),
+                sex=sex,
                 size=size,
                 weight=weight,
                 year=as.numeric(year),
@@ -622,42 +623,42 @@ for(s in 24:dim(winter.vars)[1]){
 # Call JAGS from R
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LIOW_CJS_model_p_var_3stage_simpleage_sex.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
 
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_size.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_weight.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_weight.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_size_age.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_size_age.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_weight_age.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_weight_age.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_age.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_age.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
@@ -687,9 +688,11 @@ if(winter.vars$age[s]== "yes"){
 }
 
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table_v2.csv")
+save.image("LIOW_survival_output.RData")
 } ### end loop over all models
 
-winter.vars<-fread("LIOW_win_var_selection_DIC_table_v2.csv")
+
+#winter.vars<-fread("LIOW_win_var_selection_DIC_table_v2.csv")
 winter.vars<-winter.vars %>% 
   mutate(DIC=if_else(age=="yes",if_else(size=="none",dic_med+2,dic_med+4),if_else(size=="none",dic_med,dic_med+2))) %>%
   arrange(DIC)
@@ -710,6 +713,12 @@ TABLES1 <- winter.vars %>%
   rename(Winter.variable=var)
 TABLES1
 fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
+
+
+
+
+
+
 
 #### MODEL SELECTION VIA DIC ####
 ## follow post by Bob O'Hara
