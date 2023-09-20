@@ -295,13 +295,13 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[16,c(3,1,5)] +2 <
-null.model$summary$quantiles[15,c(3,1,5)]
+full.model$summary$quantiles[15,c(3,1,5)] +2 <
+null.model$summary$quantiles[14,c(3,1,5)]
 
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.simpleage","beta.p.win","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
@@ -410,11 +410,11 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 
 AnnTab<-data.frame(season=c(1,2,2,2,2,3),
                    day=c(98,180,190,200,210,300),
-                   age=mean(age),
+                   #age=mean(age),
                    sex=1,
                    #size=0,
-                   snow=scale(c(0,0,3,6,9,0))[,1]) %>%     
-  mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
+                   snow=scale(c(0,0,3,6,9,0))[,1]) # %>%     
+  #mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
 
 Xin<-AnnTab
 
@@ -427,7 +427,7 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
+             #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
@@ -458,10 +458,10 @@ ggplot(plotdat)+
   geom_point(aes(x=day, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
   
   ## format axis ticks
-  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$day[c(1:2,4)], labels=plotdat$Season[c(1:2,4)]) +
+  scale_x_continuous(name="Life history stage", limits=c(1,365), breaks=plotdat$day[c(1:2,4)], labels=plotdat$Season[c(1:2,4)]) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
-  scale_colour_manual(name="Days of \nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
+  scale_colour_manual(name="Days of >3 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
                       breaks=c(0,3,6,9),labels=c(0,3,6,9)) +
   
   ## beautification of the axes
@@ -547,8 +547,32 @@ c(prod(stage.surv[c(1,2,6),4])*0.55,prod(stage.surv[c(1,2,6),5])*0.55,prod(stage
 # ann.surv
 
 
+Table1<- stage.surv[1:3,] %>%
+  mutate(mild.survival=sprintf("%s (%s – %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+  mutate(Duration=dur*2) %>%
+  select(Season,Duration,mild.survival) %>%
+  bind_rows(data.frame(Season="Annual",Duration=52,
+                       mild.survival=sprintf("%s (%s – %s)",
+                                        round(prod(stage.surv[1:3,4])*0.55,3),
+                                        round(prod(stage.surv[1:3,5])*0.55,3),
+                                        round(prod(stage.surv[1:3,6])*0.55,3))))
+
+Table1<- stage.surv[c(1,2,6),] %>%
+  mutate(harsh.survival=sprintf("%s (%s – %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+  select(Season,harsh.survival) %>%
+  bind_rows(data.frame(Season="Annual",
+                       harsh.survival=sprintf("%s (%s – %s)",
+                                        round(prod(stage.surv[c(1,2,6),4])*0.55,3),
+                                        round(prod(stage.surv[c(1,2,6),5])*0.55,3),
+                                        round(prod(stage.surv[c(1,2,6),6])*0.55,3))))  %>%
+  left_join(Table1, by="Season") %>%
+  select(Season,Duration,mild.survival,harsh.survival)
+
+Table1
+fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 
 
+  
 # save.image("LIOW_survival_output.RData")
 # load("LIOW_survival_output.RData")
 
@@ -676,9 +700,9 @@ winter.vars
 ## create TABLE S1
 
 TABLES1 <- winter.vars %>%
-  mutate(winter.effect=sprintf("%s (%s - %s)",round(beta_med,3),round(beta_lcl,3),round(beta_ucl,3))) %>%
-  mutate(size.effect=sprintf("%s (%s - %s)",round(beta_size,3),round(beta_size_lcl,3),round(beta_size_ucl,3))) %>%
-  mutate(age.effect=sprintf("%s (%s - %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
+  mutate(winter.effect=sprintf("%s (%s – %s)",round(beta_med,3),round(beta_lcl,3),round(beta_ucl,3))) %>%
+  mutate(size.effect=sprintf("%s (%s – %s)",round(beta_size,3),round(beta_size_lcl,3),round(beta_size_ucl,3))) %>%
+  mutate(age.effect=sprintf("%s (%s – %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
   mutate(age.effect=if_else(age=="no","",age.effect)) %>%
   mutate(size.effect=if_else(size=="none","",size.effect)) %>%
   arrange(DIC) %>%
