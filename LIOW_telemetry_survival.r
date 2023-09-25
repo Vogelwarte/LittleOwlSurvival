@@ -594,6 +594,9 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 ### settled on using simple deviance since number of parameters is constant for winter variables - BUT NOT FOR INCLUSION OF AGE AND SIZE
 # library(rjags)
 
+
+
+############################-----------------------------------------------------------------------################################################################
 #### EXPLORE OTHER VARIABLES #####
 
 #winter.vars<-data.frame(var=unique(allcov$variable),dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0)
@@ -619,7 +622,7 @@ for(s in 1:dim(winter.vars)[1]){
 # Call JAGS from R
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LIOW_CJS_model_p_var_3stage_sex.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
@@ -686,6 +689,9 @@ if(winter.vars$age[s]== "yes"){
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table_v2.csv")
 save.image("LIOW_survival_output.RData")
 } ### end loop over all models
+
+
+############################-----------------------------------------------------------------------################################################################
 
 
 #winter.vars<-fread("LIOW_win_var_selection_DIC_table_v2.csv")
