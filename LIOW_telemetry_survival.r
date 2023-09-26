@@ -437,8 +437,8 @@ for(s in 1:nrow(MCMCout)) {
     mutate(surv=plogis(logit.surv)) %>%
     
     ## RENAME THE SEASONS
-    mutate(Season=ifelse(season==1,"Dispersal",
-                         ifelse(season==2,"Winter","Breeding"))) %>%
+    mutate(Season=ifelse(season==1,"Autumn",
+                         ifelse(season==2,"Winter","Spring"))) %>%
     mutate(simul=s)              
   
   MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
