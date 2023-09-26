@@ -57,6 +57,14 @@ head(wincov)
 
 
 
+############
+LIOWpf<-convert.inp(inp.filename='DOB post-fledging.inp',
+                    group.df=data.frame(cohort=c('2009 / Unfed / Original' , '2010 / Fed / Exchanged' , '2010 / Fed / Original' , '2010 / Unfed / Exchanged' , '2010 / Unfed / Original' , '2011 / Fed / Exchanged' , '2011 / Fed / Original' , '2011 / Unfed / Exchanged' , '2011 / Unfed / Original' )),
+                    covariates = c('Hatching date' , 'Brood size' , 'Rank' , 'Start feeding' , 'Residual weight' , 'Residual wing' , 'Residual tarsus' , 'Residual beak' , 'Relative residual weight' , 'Relative residual wing' , 'Relative residual tarsus' , 'Relative residual beak' , 'Male'),
+                    use.comments = TRUE)
+str(LIOWpf)
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # CREATE INPUT DATA FOR JAGS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
