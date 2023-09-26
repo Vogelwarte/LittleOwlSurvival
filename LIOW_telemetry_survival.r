@@ -386,8 +386,9 @@ REP.null <- MCMCpstr(null.model$mcmc, params=c("fit.rep"), type="chains")
 GOF.null<-tibble(Rep=as.numeric(REP.null[[1]]),Obs=as.numeric(OBS.null[[1]])) %>%
   mutate(P=ifelse(Obs>Rep,1,0))
 
-ggplot(GOF.null,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge(), color="red") +
+ggplot(GOF.null,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge()) +
   geom_abline(intercept = 0, slope = 1) +
+  theme(legend.position="none") +
   annotate("text",label=as.character(round(mean(GOF.null$P),2)),x=20,y=20)
 
 mean(GOF.null$P)
@@ -461,7 +462,7 @@ ggplot(plotdat)+
   scale_x_continuous(name="Life history stage", limits=c(1,365), breaks=plotdat$day[c(1:2,4)], labels=plotdat$Season[c(1:2,4)]) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
-  scale_colour_manual(name="Days of >3 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
+  scale_colour_manual(name="Days of >5 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
                       breaks=c(0,3,6,9),labels=c(0,3,6,9)) +
   
   ## beautification of the axes
