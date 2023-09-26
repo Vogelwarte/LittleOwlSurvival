@@ -231,7 +231,7 @@ INPUT <- list(y = CH, f = f,
               sex=sex,
               #size=size,
               year=as.numeric(year),#weight=weight,
-              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover3"))[,3:25]))  ### select any of the winter covariates 
+              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,3:25]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
 # Initial values 
@@ -308,14 +308,14 @@ MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
          round = 3,
          file_name = 'LIOW_survival',
-         dir = 'C:/Users/sop/Documents/Steffen',
+         dir = 'C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival',
          mkdir = 'LIOW_v4',
          add_field = '4.0',
          add_field_names = 'Data version',
          save_obj = TRUE,
-         obj_name = 'LIOW-fit-18Sept2023',
+         obj_name = 'LIOW-fit-26Sept2023',
          add_obj = list(INPUT, sessionInfo()),
-         add_obj_names = c('surv-data-18Sept2023', 'session-info-18Sept2023'))
+         add_obj_names = c('surv-data-26Sept2023', 'session-info-26Sept2023'))
 
 
 
@@ -386,7 +386,7 @@ REP.null <- MCMCpstr(null.model$mcmc, params=c("fit.rep"), type="chains")
 GOF.null<-tibble(Rep=as.numeric(REP.null[[1]]),Obs=as.numeric(OBS.null[[1]])) %>%
   mutate(P=ifelse(Obs>Rep,1,0))
 
-ggplot(GOF.null,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge()) +
+ggplot(GOF.null,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge(), color="red") +
   geom_abline(intercept = 0, slope = 1) +
   annotate("text",label=as.character(round(mean(GOF.null$P),2)),x=20,y=20)
 
