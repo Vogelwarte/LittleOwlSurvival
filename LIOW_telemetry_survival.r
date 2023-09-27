@@ -146,6 +146,10 @@ allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
   spread(key=occ, value=value) %>%
   arrange(variable,year)
 
+### ADD 7 OCCASIONS FOR POST_FLEDGING PERIOD
+allcov[,26:32]<-allcov[,3]
+names(allcov)[26:32]<-paste("pf",seq(1:7),sep="")
+
 
 ### PREPARE SEX COVARIATE
 ## 80 individuals do not have an assigned sex, so we use the overall proportion and then randomly allocate birds to a sex
@@ -183,15 +187,15 @@ recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 
 
 # Specify model in JAGS language
-sink("LIOW_CJS_model_p_var_3stage_sex.jags")
+sink("LIOW_CJS_fullyear.jags")
 cat("
 model {
 
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ## beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ## beta.p.yr[year[i]] + 
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.age*age[i,t] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ## beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.yr[year[i]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  
       } #t
    } #i
 for (i in 1:nind){
@@ -199,7 +203,7 @@ for (i in 1:nind){
    epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
-  for (s in 1:3){   ### baseline for the 3 seasons dispersal, winter, breeding
+  for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
    mean.phi[s] ~ dbeta(95, 10)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
@@ -218,15 +222,17 @@ tau.p <- pow(sigma.p, -2)
 
 for (y in 1:3) {
  beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect 
+ beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
+
 
 # Likelihood 
 for (i in 1:nind){
@@ -280,12 +286,13 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
-              #age=age_scale,
-              simpleage=as.numeric(simpleage_scale),
+              age=age_scale,
+              #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
-              year=as.numeric(year),#weight=weight,
-              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,3:25]))  ### select any of the winter covariates 
+              year=as.numeric(year),
+              #weight=weight,
+              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:32,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
 # Initial values 
@@ -303,12 +310,12 @@ cjs.init.z <- function(ch,f){
 }
 
 inits <- function(){list(z = cjs.init.z(CH, f),
-                         mean.phi = rbeta(3, 95, 10),
+                         mean.phi = rbeta(4, 95, 10),
                          mean.p = c(runif(1, 0.9, 1),runif(1, 0.3, 0.9)),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.p.yr","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -320,7 +327,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_fullyear.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -331,7 +338,7 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_simpleage_sex_null.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_fullyear.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
