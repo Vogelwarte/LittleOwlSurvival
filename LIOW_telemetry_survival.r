@@ -25,6 +25,9 @@
 
 ## REVISED 19 SEPT 2023: need to include age as offset (single value) and sex (Tschumi et al. 2019)
 
+## REVISED 27 SEPT 2023: trying to include post-fledging data and re-instate age (data from Perrig et al. 2017)
+
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -57,7 +60,7 @@ head(wincov)
 
 
 
-############
+############ read in post-fledging data
 LIOWpf<-convert.inp(inp.filename='DOB post-fledging.inp',
                     group.df=data.frame(cohort=c('2009 / Unfed / Original' , '2010 / Fed / Exchanged' , '2010 / Fed / Original' , '2010 / Unfed / Exchanged' , '2010 / Unfed / Original' , '2011 / Fed / Exchanged' , '2011 / Fed / Original' , '2011 / Unfed / Exchanged' , '2011 / Unfed / Original' )),
                     covariates = c('Hatching date' , 'Brood size' , 'Rank' , 'Start feeding' , 'Residual weight' , 'Residual wing' , 'Residual tarsus' , 'Residual beak' , 'Relative residual weight' , 'Relative residual wing' , 'Relative residual tarsus' , 'Relative residual beak' , 'Male'),
@@ -65,29 +68,70 @@ LIOWpf<-convert.inp(inp.filename='DOB post-fledging.inp',
 str(LIOWpf)
 
 
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# EXTRACT COVARIATES AND MATCH THE TWO ENCOUNTER HISTORIES
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## EXTRACT BIRD ID
+LIOWpf$bird_id<-str_trim(row.names(LIOWpf))
+LIOWch$bird_id<-str_trim(row.names(LIOWch))
+
+## EXTRACT YEAR AND FEEDING REGIME
+dim(LIOWpf)
+LIOWpf[,18:20] <- str_split_fixed(string=LIOWpf$cohort,pattern=" / ",n=3)
+names(LIOWpf)[c(4,8,10,18:20)] <-c("hatch_date","residual.weight","residual.tarsus","year","feeding","origin")
+names(LIOWch)[5]<-"age_dept"
+
+LIOW<-LIOWpf %>% select(bird_id,ch,hatch_date,Male,year,residual.weight,residual.tarsus,feeding,origin) %>%
+  left_join(LIOWch[,c(1,3,5,8)],by=c("bird_id","year")) %>%
+  mutate(ch.y=ifelse(is.na(ch.y),"000000000000000000000000",ch.y)) %>%
+  mutate(ch=paste(ch.x,ch.y,sep="")) %>%
+  select(-ch.y,-ch.x)
+
+dim(LIOW)
+head(LIOW)
+
+
+
+## CALCULATE AGE AT DEPARTURE FOR IND THAT DID NOT SURVIVE
+summary(LIOW$hatch_date)
+plot(LIOW$age_dept,LIOW$hatch_date)
+summary(lm(LIOW$age_dept~LIOW$hatch_date))
+LIOW$age_dept==(92-LIOW$hatch_date)  ### this is the conversion for age
+
+LIOW<-LIOW %>% mutate(age_dept=92-hatch_date)
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # CREATE INPUT DATA FOR JAGS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-N.occ<-nchar(LIOWch$ch[1])
+N.occ<-nchar(LIOW$ch[1])
 
 ### EXTRACT COLUMN VALUES INTO numeric vectors
-y <- data.frame(str_split_fixed(LIOWch$ch, "", N.occ)) %>% mutate_at(1:N.occ,as.numeric)
+y <- data.frame(str_split_fixed(LIOW$ch, "", N.occ)) %>% mutate_at(1:N.occ,as.numeric)
 CH<-as.matrix(y, dimnames=F)
-year <- as.numeric(LIOWch$year)-2008
+year <- as.numeric(LIOW$year)-2008
 #season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
-season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
-winter<-ifelse(season==2,1,0) ## binary variable for winter 
+#season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
+season<-c(rep(1,7),rep(2,6),rep(3,10),rep(4,7)) ## Summer x 7, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
 
-age <- LIOWch[,5]   # age in days on 1 Aug
+winter<-ifelse(season==3,1,0) ## binary variable for winter 
+
+age <- LIOW[,9]   # age in days on 1 Aug
 agemat<-CH
-agemat[,1]<-age
-for(col in 2:N.occ){
- agemat[,col]<-agemat[,col-1]+14
+agemat[,8]<-age
+for(col in 7:1){
+ agemat[,col]<-agemat[,col+1]-14
 }
+for(col in 9:N.occ){
+  agemat[,col]<-agemat[,col-1]+14
+}
+
 age_scale<-scale(agemat)
 simpleage_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
-weight <- LIOWch[,6] # residual weight (seems to be standardized already)
-size <- LIOWch[,7] # residual tarsus (seems to be standardized already)
+weight <- LIOW[,5] # residual weight (seems to be standardized already)
+size <- LIOW[,6] # residual tarsus (seems to be standardized already)
 
 # Create vector with occasion of marking
 get.first <- function(x) min(which(x!=0))
@@ -104,11 +148,11 @@ allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
 
 
 ### PREPARE SEX COVARIATE
-## 8 individuals do not have an assigned sex, so we use the overall proportion and then randomly allocate birds to a sex
-sex <- LIOWch[,4]
+## 80 individuals do not have an assigned sex, so we use the overall proportion and then randomly allocate birds to a sex
+sex <- LIOW[,3]
 table(sex)
-known.male.ratio<-table(sex)[3]/sum(table(sex)[c(1,3)])
-sex[!(sex %in% c(0,1))]<-rbinom(n=table(sex)[2],size=1,prob=known.male.ratio)
+known.male.ratio<-table(sex)[4]/sum(table(sex)[c(1,4)])
+sex[!(sex %in% c(0,1))]<-rbinom(n=sum(table(sex)[2:3]),size=1,prob=known.male.ratio)
 
 
 ### CALCULATE PRIMITIVE SURVIVAL AS % OF INDIVIDUALS RECORDED IN LAST OCCASION - important for first line in manuscript
@@ -122,11 +166,13 @@ sum(y[,dim(y)[2]])/dim(y)[1]
 # 2 - limited effort: 15-18 in 2009, and 11 and 16 in 2010
 # 3 - zero in 14, 19, 20 and 21 in 2009 because no field effort at all
 
+## updated on 27 Sept by adding 7 encounter occasions
+
 recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
 
-recap.mat[year==1,c(15,16,17,18)] <- 2
-recap.mat[year==2,c(11,16)] <- 2
-recap.mat[year==1,c(14,19,20,21)] <- 3
+recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
+recap.mat[year==2,(c(11,16)+7)] <- 2
+recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
