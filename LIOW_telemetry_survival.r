@@ -315,7 +315,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.p.yr","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.win","beta.p.win","beta.p.yr","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -336,9 +336,9 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 #                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.p.win","beta.p.yr","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_fullyear.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_fullyear_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -356,14 +356,14 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[15,c(3,1,5)] +2 <
-null.model$summary$quantiles[14,c(3,1,5)]
+full.model$summary$quantiles[21,c(3,1,5)] +2 <
+null.model$summary$quantiles[20,c(3,1,5)]
 
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.p.win","mean.p"))
-MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","beta.male","beta.simpleage","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.win","beta.male","beta.p.win","mean.p"))
+MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
