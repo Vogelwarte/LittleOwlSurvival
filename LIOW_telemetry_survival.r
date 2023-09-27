@@ -112,6 +112,7 @@ N.occ<-nchar(LIOW$ch[1])
 y <- data.frame(str_split_fixed(LIOW$ch, "", N.occ)) %>% mutate_at(1:N.occ,as.numeric)
 CH<-as.matrix(y, dimnames=F)
 year <- as.numeric(LIOW$year)-2008
+feeding <- ifelse(LIOW$feeding=="Unfed",0,1)
 #season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
 #season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
 season<-c(rep(1,7),rep(2,6),rep(3,10),rep(4,7)) ## Summer x 7, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
@@ -356,8 +357,8 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[21,c(3,1,5)] +2 <
-null.model$summary$quantiles[20,c(3,1,5)]
+full.model$summary$quantiles[18,c(3,1,5)] +2 <
+null.model$summary$quantiles[17,c(3,1,5)]
 
 
 
@@ -369,14 +370,14 @@ MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
          round = 3,
          file_name = 'LIOW_survival',
-         dir = 'C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival',
-         mkdir = 'LIOW_v4',
-         add_field = '4.0',
+         dir = 'C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/output',
+         mkdir = 'LIOW_v5',
+         add_field = '5.0',
          add_field_names = 'Data version',
          save_obj = TRUE,
-         obj_name = 'LIOW-fit-26Sept2023',
+         obj_name = 'LIOW-fit-27Sept2023',
          add_obj = list(INPUT, sessionInfo()),
-         add_obj_names = c('surv-data-26Sept2023', 'session-info-26Sept2023'))
+         add_obj_names = c('surv-data-27Sept2023', 'session-info-27Sept2023'))
 
 
 
@@ -470,13 +471,13 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
-AnnTab<-data.frame(season=c(1,2,2,2,2,3),
-                   day=c(98,180,190,200,210,300),
+AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
+                   age=c(45,98,180,190,200,210,300),
                    #age=mean(age),
                    sex=1,
                    #size=0,
-                   snow=scale(c(0,0,3,6,9,0))[,1]) # %>%     
-  #mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
+                   snow=scale(c(0,0,0,3,6,9,0))[,1])  %>%     
+  mutate(scaleage=(age-attr(age_scale, 'scaled:center')[1])/attr(age_scale, 'scaled:scale')[1]) 
 
 Xin<-AnnTab
 
@@ -492,14 +493,16 @@ for(s in 1:nrow(MCMCout)) {
              #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
+             as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
     mutate(surv=plogis(logit.surv)) %>%
     
     ## RENAME THE SEASONS
-    mutate(Season=ifelse(season==1,"Autumn",
-                         ifelse(season==2,"Winter","Spring"))) %>%
+    mutate(Season=ifelse(season==2,"Autumn",
+                         ifelse(season==3,"Winter",
+                                ifelse(season==4,"Spring","Summer")))) %>%
     mutate(simul=s)              
   
   MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
@@ -509,18 +512,19 @@ for(s in 1:nrow(MCMCout)) {
 ### CREATE PLOT
 
 plotdat<-  MCMCpred %>%   rename(raw.surv=surv) %>%
-  group_by(Season,day,snow) %>%
+  group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(snow=c(0,0,0,3,6,9))
+  mutate(snow=c(0,0,0,0,3,6,9)) %>%
+  arrange(age)
 
  
 ggplot(plotdat)+
-  geom_errorbar(aes(x=day, ymin=surv.lcl, ymax=surv.ucl, colour=factor(snow)), width=0.2) +   ##, type=Origin
-  geom_point(aes(x=day, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
+  geom_errorbar(aes(x=age, ymin=surv.lcl, ymax=surv.ucl, colour=factor(snow)), width=0.2) +   ##, type=Origin
+  geom_point(aes(x=age, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
   
   ## format axis ticks
-  scale_x_continuous(name="Life history stage", limits=c(1,365), breaks=plotdat$day[c(1:2,4)], labels=plotdat$Season[c(1:2,4)]) +
+  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1:2,5,7)], labels=plotdat$Season[c(1:3,7)]) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
   scale_colour_manual(name="Days of >5 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
