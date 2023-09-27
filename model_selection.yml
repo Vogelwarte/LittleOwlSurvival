@@ -25,7 +25,7 @@ jobs:
         
       - name: Install dependencies
         run: |
-          install.packages(c('runjags','tidyverse','data.table','lubridate'))
+          install.packages(c('runjags','tidyverse','data.table'))
           load("LIOW_SURV_INPUT.RData")
         shell: Rscript {0}
         

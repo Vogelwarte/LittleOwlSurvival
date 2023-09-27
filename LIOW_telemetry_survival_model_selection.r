@@ -10,19 +10,15 @@
 library(runjags)
 library(tidyverse)
 library(data.table)
-library(lubridate)
-library(geosphere)
 filter<-dplyr::filter
 select<-dplyr::select
-library(MCMCvis)
-library(R2jags)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD DATA FROM PREAPERED ENVIRONMENT FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
-load("input/LIOW_SURV_INPUT.RData")
+load("data/LIOW_SURV_INPUT.RData")
 
 # Function to create a matrix with information about known latent state z
 known.state.cjs <- function(ch){
@@ -92,7 +88,8 @@ for(s in 1:dim(winter.vars)[1]){
                 z = known.state.cjs(CH),
                 recap.mat=recap.mat,
                 season=season,
-                simpleage=as.numeric(simpleage_scale),
+                feeding=feeding,
+		    age=age_scale,
                 sex=sex,
                 size=size,
                 weight=weight,
@@ -100,47 +97,96 @@ for(s in 1:dim(winter.vars)[1]){
                 env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates 
 
 # Call JAGS from R
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no"){
+  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
 
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no"){
+  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_size.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no"){
+  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_weight.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes"){
+  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_size_age.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes"){
+  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_weight_age.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes"){
+  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_age.jags",
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
+
+### add models with feeding ###
+  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
+    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_noage.jags",
+                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                         method = "rjparallel")
+  }
+
+  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
+    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_noage_size.jags",
+                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                         method = "rjparallel")
+  }
+  
+  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
+    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_noage_mass.jags",
+                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                         method = "rjparallel")
+  }
+  
+  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
+    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_size.jags",
+                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                         method = "rjparallel")
+  }
+  
+  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
+    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_mass.jags",
+                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                         method = "rjparallel")
+  }
+  
+  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
+    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
+                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed.jags",
+                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                         method = "rjparallel")
+  }
+
+
+
+
+##### WRITING OUTPUT OF PARAMETERS IN THE MODEL #########output/
+
 
 winter.vars[s,4:6]<-modelfit$summary$quantiles[1,c(3,1,5)]
 winter.vars[s,7:9]<-modelfit$summary$quantiles[2,c(3,1,5)]
@@ -155,17 +201,15 @@ if(winter.vars$age[s]== "yes"){
 }
 
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table.csv")
-#save.image("LIOW_survival_output.RData")
+#save.image("output/LIOW_survival_output.RData")
 } ### end loop over all models
 
 
 ############################-----------------------------------------------------------------------################################################################
 
-
-#winter.vars<-fread("LIOW_win_var_selection_DIC_table_v2.csv")
 winter.vars<-winter.vars %>% 
   mutate(DIC=if_else(age=="yes",if_else(size=="none",dic_med+2,dic_med+4),if_else(size=="none",dic_med,dic_med+2))) %>%
   arrange(DIC)
 
 winter.vars
-fwrite(winter.vars,"LIOW_win_var_selection_DIC_table.csv")
+fwrite(winter.vars,"output/LIOW_win_var_selection_DIC_table.csv")
