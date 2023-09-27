@@ -1,25 +1,30 @@
-# yml file copied from monthly report GitHub action
-
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
-    branches: main
-    
-name: exhaustive model selection
+    branches: [main, master]
+
+name: render-plots
 
 jobs:
-  knit:
-    runs-on: macos-latest
+  render-plots:
+    runs-on: [self-hosted, linux, gpu-falco]
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      R_KEEP_PKG_SOURCE: yes
-    
+      
     steps:
-      - uses: actions/checkout@v3
-    
-      - uses: r-lib/actions/setup-pandoc@v2
-    
-      - uses: r-lib/actions/setup-r@v2
-          
+      - name: Checkout the repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set-up R-core
+        uses: r-lib/actions/setup-r@v2
+        with:
+#don't install anything, just use the installed R version 
+          install-r: false
+#          r-version: 'renv'
+
       - name: Install system dependencies
         run: brew install jags
         
@@ -29,12 +34,33 @@ jobs:
           load("LIOW_SURV_INPUT.RData")
         shell: Rscript {0}
         
+      - name: Restore renv library of R-packages 
+        uses: r-lib/actions/setup-renv@v2
+        
       - name: RUN MODEL SELECTION
         run: Rscript LIOW_telemetry_survival_model_selection.r
             
       - name: Commit results
         run: |
-          git add LIOW_win_var_selection_DIC_table.csv
+          git add output/LIOW_win_var_selection_DIC_table.csv
           git commit -m 'Model selection table produced' || echo "No changes to commit"
           git push origin || echo "No changes to commit"
+          
+      - name: List the output folder
+        run: ls -laR ./output
+        
+      - name: Prepare artifact name prefix
+        run: date +'ARTIFACT_NAME=script_output_%Y%m%d_%H%M%SUTC' >> $GITHUB_ENV
+        
+      - name: Show artifact name prefix
+        run: echo 'ARTIFACT_NAME=' ${{ env.ARTIFACT_NAME }}
+        
+      - name: Upload output folder as an artifact 
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.ARTIFACT_NAME }}-${{ github.sha }}
+          #take everything from ./output except the files starting with . (dot)
+          path: |
+            output/*
+            !output/**/.*
   

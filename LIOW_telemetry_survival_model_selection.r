@@ -50,37 +50,29 @@ cjs.init.z <- function(ch,f){
 nt <- 6
 nb <- 200
 nc <- 3
-nad<-100
-ns<-2000
-ni=3500
+nad<-10
+ns<-200
+ni<-350
 
+inits <- function(){list(z = cjs.init.z(CH, f),
+                         mean.phi = rbeta(4, 95, 10),
+                         mean.p = c(runif(1, 0.9, 1),runif(1, 0.3, 0.9)),
+                         sigma = runif(1, 0, 2))} 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-### re-run with revised model on 21 Aug
-### re-run with revised model and age, sex, and size variables on 18 Sept 2023
 
-### to extract DIC tried use rjags - did not work any better
-### settled on using simple deviance since number of parameters is constant for winter variables - BUT NOT FOR INCLUSION OF AGE AND SIZE
-# library(rjags)
-
-
-
-############################-----------------------------------------------------------------------################################################################
-#### EXPLORE OTHER VARIABLES #####
-
-#winter.vars<-data.frame(var=unique(allcov$variable),dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0)
 winter.vars<-expand.grid(var=unique(allcov$variable),
                          feeding=c("yes","no"),
                          size=c("size","mass","none"),
                          age=c("yes","no"),
                          dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0,
                          beta_size=0, beta_size_lcl=0,beta_size_ucl=0,
-                         beta_feed=0, beta_feed_lcl=0,beta_feed_ucl=0,
-                         beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0)
+                         beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0,
+                         beta_feed=0, beta_feed_lcl=0,beta_feed_ucl=0)
 param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed")
-for(s in 1:dim(winter.vars)[1]){
+for(s in 115:dim(winter.vars)[1]){
 
   INPUT <- list(y = CH, f = f,
                 nind = dim(CH)[1],
@@ -94,7 +86,8 @@ for(s in 1:dim(winter.vars)[1]){
                 size=size,
                 weight=weight,
                 year=as.numeric(year),
-                env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates 
+                #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates
+         	    env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,c(26:32,3:25)]))  ### select any of the winter covariates  
 
 # Call JAGS from R
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
@@ -188,17 +181,28 @@ for(s in 1:dim(winter.vars)[1]){
 ##### WRITING OUTPUT OF PARAMETERS IN THE MODEL #########output/
 
 
-winter.vars[s,4:6]<-modelfit$summary$quantiles[1,c(3,1,5)]
-winter.vars[s,7:9]<-modelfit$summary$quantiles[2,c(3,1,5)]
+winter.vars[s,5:7]<-modelfit$summary$quantiles[1,c(3,1,5)]
+winter.vars[s,8:10]<-modelfit$summary$quantiles[2,c(3,1,5)]
 
 if(winter.vars$size[s] %in% c("mass","size")){
-  winter.vars[s,10:12]<-modelfit$summary$quantiles[3,c(3,1,5)]
+  winter.vars[s,11:13]<-modelfit$summary$quantiles[3,c(3,1,5)]
 }
 if(winter.vars$age[s]== "yes"){
 	if(winter.vars$size[s] %in% c("mass","size")){	
-  	winter.vars[s,13:15]<-modelfit$summary$quantiles[4,c(3,1,5)]
-	}else{winter.vars[s,13:15]<-modelfit$summary$quantiles[3,c(3,1,5)]}
+  	winter.vars[s,14:16]<-modelfit$summary$quantiles[4,c(3,1,5)]
+	}else{winter.vars[s,14:16]<-modelfit$summary$quantiles[3,c(3,1,5)]}
 }
+
+if(winter.vars$feeding[s]== "yes"){
+ if(winter.vars$age[s]== "yes"){
+	if(winter.vars$size[s] %in% c("mass","size")){	
+  	winter.vars[s,17:19]<-modelfit$summary$quantiles[5,c(3,1,5)]
+	}else{winter.vars[s,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]}
+ }else{
+	if(winter.vars$size[s] %in% c("mass","size")){	
+  	winter.vars[s,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]
+	}else{winter.vars[s,17:19]<-modelfit$summary$quantiles[3,c(3,1,5)]}
+}}
 
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table.csv")
 #save.image("output/LIOW_survival_output.RData")
