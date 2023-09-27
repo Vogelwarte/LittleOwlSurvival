@@ -187,7 +187,7 @@ recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 
 
 # Specify model in JAGS language
-sink("LIOW_CJS_fullyear.jags")
+sink("models/LIOW_CJS_fullyear.jags")
 cat("
 model {
 
@@ -195,7 +195,7 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.age*age[i,t] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ## beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.yr[year[i]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
 for (i in 1:nind){
@@ -222,7 +222,7 @@ tau.p <- pow(sigma.p, -2)
 
 for (y in 1:3) {
  beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect 
- beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
+ #beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
@@ -315,7 +315,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.win","beta.p.win","beta.p.yr","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -327,7 +327,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_fullyear.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -336,9 +336,9 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 #                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.p.win","beta.p.yr","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_fullyear_null.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -362,7 +362,7 @@ null.model$summary$quantiles[20,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.win","beta.male","beta.p.win","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.win","beta.male","beta.p.win","beta.p.yr","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
