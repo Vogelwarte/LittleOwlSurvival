@@ -26,6 +26,8 @@
 ## REVISED 19 SEPT 2023: need to include age as offset (single value) and sex (Tschumi et al. 2019)
 
 ## REVISED 27 SEPT 2023: trying to include post-fledging data and re-instate age (data from Perrig et al. 2017)
+## added creation of R env file for outsourcing the model selection
+## moved model selection into separate script to be run on server
 
 
 library(runjags)
@@ -40,6 +42,7 @@ library(MCMCvis)
 library(RMark)
 library(stringr)
 library(R2jags)
+library(renv)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,20 +51,20 @@ library(R2jags)
 setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 
-LIOWch<-convert.inp(inp.filename='1st year.inp',
+LIOWch<-convert.inp(inp.filename='data/1st year.inp',
                     group.df=data.frame(year=c("2009","2010","2011")),
                  covariates = c('Male MS group','Age on Aug 1st','oldest residual.weight','oldest residual.tarsus'),
                  use.comments = TRUE)
 str(LIOWch)
 
 
-wincov<-fread("LIOW_winter_covariates.csv")
+wincov<-fread("data/LIOW_winter_covariates.csv")
 head(wincov)
 
 
 
 ############ read in post-fledging data
-LIOWpf<-convert.inp(inp.filename='DOB post-fledging.inp',
+LIOWpf<-convert.inp(inp.filename='data/DOB post-fledging.inp',
                     group.df=data.frame(cohort=c('2009 / Unfed / Original' , '2010 / Fed / Exchanged' , '2010 / Fed / Original' , '2010 / Unfed / Exchanged' , '2010 / Unfed / Original' , '2011 / Fed / Exchanged' , '2011 / Fed / Original' , '2011 / Unfed / Exchanged' , '2011 / Unfed / Original' )),
                     covariates = c('Hatching date' , 'Brood size' , 'Rank' , 'Start feeding' , 'Residual weight' , 'Residual wing' , 'Residual tarsus' , 'Residual beak' , 'Relative residual weight' , 'Relative residual wing' , 'Relative residual tarsus' , 'Relative residual beak' , 'Male'),
                     use.comments = TRUE)
@@ -178,6 +181,15 @@ recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
 recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
 recap.mat[year==2,(c(11,16)+7)] <- 2
 recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# SAVE WORKSPACE AND R ENVIRONMENT
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+save.image("data/LIOW_SURV_INPUT.RData")
+renv::init()
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
