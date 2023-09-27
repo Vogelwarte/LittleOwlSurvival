@@ -4,10 +4,10 @@ on:
   push:
     branches: [main, master]
 
-name: render-plots
+name: model_selection
 
 jobs:
-  render-plots:
+  model_selection:
     runs-on: [self-hosted, linux, gpu-falco]
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
