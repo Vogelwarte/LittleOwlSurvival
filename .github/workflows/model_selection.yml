@@ -28,11 +28,11 @@ jobs:
 #      - name: Install system dependencies
 #        run: brew install jags
         
-      - name: Install dependencies
-        run: |
-          install.packages(c('runjags','tidyverse','data.table'))
-          load("LIOW_SURV_INPUT.RData")
-        shell: Rscript {0}
+#      - name: Install dependencies
+#        run: |
+#          install.packages(c('runjags','tidyverse','data.table'))
+#          load("LIOW_SURV_INPUT.RData")
+#        shell: Rscript {0}
         
       - name: Restore renv library of R-packages 
         uses: r-lib/actions/setup-renv@v2
