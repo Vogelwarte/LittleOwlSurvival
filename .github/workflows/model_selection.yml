@@ -25,8 +25,8 @@ jobs:
           install-r: false
 #          r-version: 'renv'
 
-      - name: Install system dependencies
-        run: brew install jags
+#      - name: Install system dependencies
+#        run: brew install jags
         
       - name: Install dependencies
         run: |
