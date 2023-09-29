@@ -92,42 +92,42 @@ for(s in 115:dim(winter.vars)[1]){
 # Call JAGS from R
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_noage.jags",
+                         model="models/LIOW_CJS_fullyear_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
 
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_noage_size.jags",
+                         model="models/LIOW_CJS_fullyear_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_noage_mass.jags",
+                         model="models/LIOW_CJS_fullyear_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_size.jags",
+                         model="models/LIOW_CJS_fullyear_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_mass.jags",
+                         model="models/LIOW_CJS_fullyear_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear.jags",
+                         model="models/LIOW_CJS_fullyear.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
@@ -135,42 +135,42 @@ for(s in 115:dim(winter.vars)[1]){
 ### add models with feeding ###
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_noage.jags",
+                         model="models/LIOW_CJS_fullyear_feed_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
 
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_noage_size.jags",
+                         model="models/LIOW_CJS_fullyear_feed_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_noage_mass.jags",
+                         model="models/LIOW_CJS_fullyear_feed_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed_size.jags",
+                         model="models/LIOW_CJS_fullyear_feed_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_mass.jags",
+                         model="models/LIOW_CJS_fullyear_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
   
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_feed.jags",
+                         model="models/LIOW_CJS_fullyear_feed.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
