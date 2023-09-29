@@ -25,27 +25,13 @@ jobs:
           install-r: false
 #          r-version: 'renv'
 
-#      - name: Install system dependencies
-#        run: brew install jags
-        
-#      - name: Install dependencies
-#        run: |
-#          install.packages(c('runjags','tidyverse','data.table'))
-#          load("LIOW_SURV_INPUT.RData")
-#        shell: Rscript {0}
-        
       - name: Restore renv library of R-packages 
         uses: r-lib/actions/setup-renv@v2
         
       - name: RUN MODEL SELECTION
         run: Rscript LIOW_telemetry_survival_model_selection.r
             
-#      - name: Commit results
-#        run: |
-#          git add output/LIOW_win_var_selection_DIC_table.csv
-#          git commit -m 'Model selection table produced' || echo "No changes to commit"
-#          git push origin || echo "No changes to commit"
-          
+
       - name: List the output folder
         run: ls -laR ./output
         
