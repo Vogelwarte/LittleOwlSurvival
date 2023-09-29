@@ -40,11 +40,11 @@ jobs:
       - name: RUN MODEL SELECTION
         run: Rscript LIOW_telemetry_survival_model_selection.r
             
-      - name: Commit results
-        run: |
-          git add output/LIOW_win_var_selection_DIC_table.csv
-          git commit -m 'Model selection table produced' || echo "No changes to commit"
-          git push origin || echo "No changes to commit"
+#      - name: Commit results
+#        run: |
+#          git add output/LIOW_win_var_selection_DIC_table.csv
+#          git commit -m 'Model selection table produced' || echo "No changes to commit"
+#          git push origin || echo "No changes to commit"
           
       - name: List the output folder
         run: ls -laR ./output
