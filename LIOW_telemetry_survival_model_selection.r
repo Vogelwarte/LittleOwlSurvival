@@ -51,8 +51,8 @@ nt <- 6
 nb <- 200
 nc <- 3
 nad<-10
-ns<-200
-ni<-350
+ns<-2000
+ni<-3500
 
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 95, 10),
@@ -163,7 +163,7 @@ for(s in 115:dim(winter.vars)[1]){
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="models/LIOW_CJS_fullyear_mass.jags",
+                         model="models/LIOW_CJS_fullyear_feed_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method = "rjparallel")
   }
