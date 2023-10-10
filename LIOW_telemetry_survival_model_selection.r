@@ -18,6 +18,7 @@ select<-dplyr::select
 # LOAD DATA FROM PREAPERED ENVIRONMENT FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+#setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 load("data/LIOW_SURV_INPUT.RData")
 
 # Function to create a matrix with information about known latent state z
@@ -72,7 +73,7 @@ winter.vars<-expand.grid(var=unique(allcov$variable),
                          beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0,
                          beta_feed=0, beta_feed_lcl=0,beta_feed_ucl=0)
 param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed")
-for(s in 115:dim(winter.vars)[1]){
+for(s in 1:dim(winter.vars)[1]){
 
   INPUT <- list(y = CH, f = f,
                 nind = dim(CH)[1],
