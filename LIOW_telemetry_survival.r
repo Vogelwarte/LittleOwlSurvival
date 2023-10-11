@@ -188,7 +188,7 @@ recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 # SAVE WORKSPACE AND R ENVIRONMENT
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 save.image("data/LIOW_SURV_INPUT.RData")
-renv::init()
+#renv::init()
 
 
 
@@ -207,7 +207,7 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.simpleage*simpleage[i] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ##  + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -241,7 +241,7 @@ for (y in 1:3) {
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
 #beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
-beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
+#beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
@@ -484,8 +484,8 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
 AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
-                   age=c(45,98,180,190,200,210,300),
-                   #age=mean(age),
+                   #age=c(45,98,180,190,200,210,300),
+                   age=mean(age),
                    sex=1,
                    #size=0,
                    snow=scale(c(0,0,0,3,6,9,0))[,1])  %>%     
@@ -502,10 +502,10 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
+             as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
+             #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
@@ -523,7 +523,8 @@ for(s in 1:nrow(MCMCout)) {
 
 ### CREATE PLOT
 
-plotdat<-  MCMCpred %>%   rename(raw.surv=surv) %>%
+plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
+  mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
