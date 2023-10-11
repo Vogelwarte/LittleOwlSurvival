@@ -207,7 +207,7 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.age*age[i,t] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ## beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.simpleage*simpleage[i] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ##  + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -239,9 +239,9 @@ for (y in 1:3) {
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
-#beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
+beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
@@ -299,8 +299,8 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
-              age=age_scale,
-              #simpleage=as.numeric(simpleage_scale),
+              #age=age_scale,
+              simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
               year=as.numeric(year),
@@ -328,7 +328,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.simpleage","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -375,7 +375,7 @@ null.model$summary$quantiles[17,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.win","beta.male","beta.p.win","beta.p.yr","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.simpleage","beta.win","beta.male","beta.p.win","beta.p.yr","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
