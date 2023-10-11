@@ -207,7 +207,12 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] +
+                        beta.yr[year[i]] +
+                        beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.win*env[year[i],t] +
+                        beta.male*sex[i] +
+                        epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -239,7 +244,7 @@ for (y in 1:3) {
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
@@ -299,8 +304,9 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
-              #age=age_scale,
-              simpleage=as.numeric(simpleage_scale),
+              age=age_scale,
+              pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
+              #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
               year=as.numeric(year),
@@ -328,7 +334,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.simpleage","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -369,7 +375,7 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[18,c(3,1,5)] +2 <
+full.model$summary$quantiles[17,c(3,1,5)] +2 <
 null.model$summary$quantiles[17,c(3,1,5)]
 
 
@@ -484,8 +490,8 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
 AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
-                   #age=c(45,98,180,190,200,210,300),
-                   age=mean(age),
+                   age=c(45,98,180,190,200,210,300),
+                   #age=mean(age),
                    sex=1,
                    #size=0,
                    snow=scale(c(0,0,0,3,6,9,0))[,1])  %>%     
@@ -502,8 +508,8 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
-             as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
+             #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
+             as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
