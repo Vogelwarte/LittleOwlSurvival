@@ -96,6 +96,12 @@ dim(LIOW)
 head(LIOW)
 
 
+## INSPECT HATCH DATE DISTRIBUTION
+## the EncHist are all structured to be starting at 1, but that is difficult to reconcile with time-varying covariates later on during the year
+## I suspect that the reason for the weird age effects is the issue that age and time are not properly aligned
+hist(LIOW$hatch_date)
+LIOW %>% select(bird_id,hatch_date,ch) %>% filter(hatch_date < 10 | hatch_date >40)
+
 
 ## CALCULATE AGE AT DEPARTURE FOR IND THAT DID NOT SURVIVE
 summary(LIOW$hatch_date)
@@ -381,7 +387,7 @@ null.model$summary$quantiles[17,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.win","beta.male","beta.p.win","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
