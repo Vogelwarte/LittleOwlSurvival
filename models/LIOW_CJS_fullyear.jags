@@ -6,7 +6,7 @@ for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
-                        #beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
                         beta.male*sex[i] +
                         epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
@@ -41,7 +41,7 @@ for (y in 1:3) {
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)

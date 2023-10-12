@@ -35,14 +35,14 @@ library(tidyverse)
 library(data.table)
 library(lubridate)
 library(tidyverse)
-library(geosphere)
+# library(geosphere)
 filter<-dplyr::filter
 select<-dplyr::select
 library(MCMCvis)
-library(RMark)
-library(stringr)
-library(R2jags)
-library(renv)
+# library(RMark)
+# library(stringr)
+# library(R2jags)
+# library(renv)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,7 +70,7 @@ for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
-                        #beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
                         beta.male*sex[i] +
                         epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
@@ -105,7 +105,7 @@ for (y in 1:3) {
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
@@ -165,14 +165,14 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
-              #age=age_scale,
-              #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
+              age=age_scale,
+              pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
               #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
               year=as.numeric(year),
               #weight=weight,
-              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:32,3:25)]))  ### select any of the winter covariates 
+              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
 # Initial values 
@@ -242,7 +242,7 @@ null.model$summary$quantiles[17,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.p.win","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.age","beta.male","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
@@ -350,12 +350,13 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
-AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
-                   age=c(45,98,180,190,200,210,300),
+AnnTab<-data.frame(season=c(1,1,1,1,2,3,3,3,3,4),
+                   age=c(15,30,45,60,98,180,190,200,210,300),
                    #age=mean(age),
                    sex=1,
                    #size=0,
-                   snow=scale(c(0,0,0,3,6,9,0))[,1])  %>%     
+                   snow=scale(c(0,0,0,0,0,0,3,6,9,0))[,1])  %>% 
+  mutate(pf=ifelse(season==1,1,0)) %>%
   mutate(scaleage=(age-attr(age_scale, 'scaled:center')[1])/attr(age_scale, 'scaled:scale')[1]) 
 
 Xin<-AnnTab
@@ -372,7 +373,7 @@ for(s in 1:nrow(MCMCout)) {
              #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
+             as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage*pf +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
