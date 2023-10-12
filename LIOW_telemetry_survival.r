@@ -236,7 +236,7 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[16,c(3,1,5)] +2 <
+full.model$summary$quantiles[18,c(3,1,5)] +2 <
 null.model$summary$quantiles[17,c(3,1,5)]
 
 
@@ -357,7 +357,7 @@ AnnTab<-data.frame(season=c(1,1,1,1,2,3,3,3,3,4),
                    #size=0,
                    snow=scale(c(0,0,0,0,0,0,3,6,9,0))[,1])  %>% 
   mutate(pf=ifelse(season==1,1,0)) %>%
-  mutate(scaleage=(age-attr(age_scale, 'scaled:center')[1])/attr(age_scale, 'scaled:scale')[1]) 
+  mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) 
 
 Xin<-AnnTab
 
@@ -392,11 +392,11 @@ for(s in 1:nrow(MCMCout)) {
 ### CREATE PLOT
 
 plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
-  mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
+  mutate(age=rep(c(15,30,45,60,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(snow=c(0,0,0,0,3,6,9)) %>%
+  mutate(snow=c(0,0,0,0,0,0,0,3,6,9)) %>%
   arrange(age)
 
  
@@ -405,7 +405,7 @@ ggplot(plotdat)+
   geom_point(aes(x=age, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
   
   ## format axis ticks
-  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1:2,5,7)], labels=plotdat$Season[c(1:3,7)]) +
+  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(3,5,8,10)], labels=plotdat$Season[c(3,5,8,10)]) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
   scale_colour_manual(name="Days of >5 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
