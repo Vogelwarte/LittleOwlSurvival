@@ -229,7 +229,7 @@ for(col in 8:N.occ){
   agemat[,col]<-agemat[,col-1]+14
 }
 
-age_scale<-scale(agemat)
+age_scale<-scale(agemat,center=F)  ## to prevent column-specific centering we need to set center=F
 simpleage_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
 weight <- LIOW[,5] # residual weight (seems to be standardized already)
 size <- LIOW[,6] # residual tarsus (seems to be standardized already)
