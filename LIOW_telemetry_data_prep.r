@@ -9,6 +9,7 @@
 ## inp data files were all set up to have simultaneous start
 ## juveniles fledged at different times, so this needs to be accounted for
 
+## extracted data from 15 June onwards, because overwinter data run until 15 Jun
 
 library(tidyverse)
 library(data.table)
@@ -21,7 +22,10 @@ library(MCMCvis)
 library(RMark)
 library(stringr)
 library(readxl)
-library(rwunderground)
+# install.packages("remotes")
+# remotes::install_github("nFrechen/RgetDWDdata")
+# library(RgetDWDdata)
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,8 +44,8 @@ dat2009<-read_excel("data/EH Master_juveniles_Moggi.xlsx",sheet="EH 2009 daily")
   filter(!is.na(Date)) %>%
   mutate(Date=as.Date(Date, origin = "1899-12-30"), DeathDate=as.Date(DeathDate, origin = "1899-12-30"), LastAliveDate=ymd(LastAliveDate), Hatching=ymd(Hatching)) %>%
   mutate(Day=yday(Date),Month=month(Date),OCC=week(Date),HatchDay=yday(Hatching),HatchOCC=week(Hatching)) %>%
-  filter(Date>ymd("2009-05-31")) %>%
-  filter(Date<ymd("2010-06-01")) %>%
+  filter(Date>ymd("2009-05-15")) %>%
+  filter(Date<ymd("2009-08-01")) %>%
   group_by(Individual, Sex,Treatment,HatchOCC,OCC) %>%
   summarise(STATE=max(Status, na.rm=T)) %>%
   spread(key=OCC, value=STATE)
@@ -57,8 +61,8 @@ dat2010<-read_excel("data/EH Master_juveniles_Moggi.xlsx",sheet="EH 2010 daily")
   filter(!is.na(Date)) %>%
   mutate(Date=as.Date(Date, origin = "1899-12-30"), DeathDate=as.Date(DeathDate, origin = "1899-12-30"), LastAliveDate=ymd(LastAliveDate), Hatching=ymd(Hatching)) %>%
   mutate(Day=yday(Date),Month=month(Date),OCC=week(Date),HatchDay=yday(Hatching),HatchOCC=week(Hatching)) %>%
-  filter(Date>ymd("2010-05-31")) %>%
-  filter(Date<ymd("2011-06-01")) %>%
+  filter(Date>ymd("2010-05-15")) %>%
+  filter(Date<ymd("2010-08-01")) %>%
   group_by(Individual, Sex,Treatment,HatchOCC,OCC) %>%
   summarise(STATE=max(Status, na.rm=T)) %>%
   spread(key=OCC, value=STATE)
@@ -73,8 +77,8 @@ dat2011<-read_excel("data/EH Master_juveniles_Moggi.xlsx",sheet="EH 2011 daily")
   filter(!is.na(Date)) %>%
   mutate(Date=as.Date(Date, origin = "1899-12-30"), DeathDate=as.Date(DeathDate, origin = "1899-12-30"), LastAliveDate=ymd(LastAliveDate), Hatching=ymd(Hatching)) %>%
   mutate(Day=yday(Date),Month=month(Date),OCC=week(Date),HatchDay=yday(Hatching),HatchOCC=week(Hatching)) %>%
-  filter(Date>ymd("2011-05-31")) %>%
-  filter(Date<ymd("2012-06-01")) %>%
+  filter(Date>ymd("2011-05-15")) %>%
+  filter(Date<ymd("2011-08-01")) %>%
   group_by(Individual, Sex,Treatment,HatchOCC,OCC) %>%
   summarise(STATE=max(Status, na.rm=T)) %>%
   spread(key=OCC, value=STATE)
@@ -85,20 +89,36 @@ keepinds<- bind_rows(dat2009,dat2010,dat2011) %>%
   summarise(N=sum(STATE, na.rm=T)) %>%
   filter(N>0)
 
-ALLDAT<- bind_rows(dat2009,dat2010,dat2011) %>%
+ALLDAT<- bind_rows(dat2011,dat2010,dat2009) %>%
   filter(Individual %in% keepinds$Individual)
 
 dim(ALLDAT)
 
 
+### create fortnightly capture history to match data frame with LIOWpf below
+
+ALLDAT2w<-ALLDAT %>%
+  gather(key="OCC",value="STATE",-Individual, -Sex,-Treatment,-HatchOCC) %>%
+  filter(!is.na(as.numeric(STATE))) %>%
+  mutate(OCC=round(as.numeric(OCC)/2)*2) %>%
+  group_by(Individual, Sex,Treatment,HatchOCC,OCC) %>%
+  summarise(STATE=max(STATE, na.rm=T)) %>%
+  spread(key=OCC, value=STATE, fill=0) %>%
+  rename(bird_id=Individual)
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # READ IN WEATHER DATA 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## https://rpubs.com/lefkios_paikousis/weatherdata-in-r
-set_api_key("put_your_own_api_key_here")     #API key in weather underground page
-my_weather_station<-"IAGLANDJ2"              #The uni of cyprus weather station id
-weather_data<-history(set_location(PWS_id = my_weather_station), date = "20170801")
+### abandoned because difficult to replicate what Moggi did
+
+# ## https://rdrr.io/github/nFrechen/RgetDWDdata/man/getDWDdata.html
+# KlimadatenLB <- getDWDdata(Messstelle=04349, historisch=T)
+# # lädt den aktuellen Datensatz der Station Cottbus herunter
+# head(KlimadatenLB)
+# tail(KlimadatenLB)
+
+
 
 
 
@@ -121,13 +141,12 @@ head(wincov)
 
 
 
-############ read in post-fledging data
+############ read in post-fledging data #####
 LIOWpf<-convert.inp(inp.filename='data/DOB post-fledging.inp',
                     group.df=data.frame(cohort=c('2009 / Unfed / Original' , '2010 / Fed / Exchanged' , '2010 / Fed / Original' , '2010 / Unfed / Exchanged' , '2010 / Unfed / Original' , '2011 / Fed / Exchanged' , '2011 / Fed / Original' , '2011 / Unfed / Exchanged' , '2011 / Unfed / Original' )),
                     covariates = c('Hatching date' , 'Brood size' , 'Rank' , 'Start feeding' , 'Residual weight' , 'Residual wing' , 'Residual tarsus' , 'Residual beak' , 'Relative residual weight' , 'Relative residual wing' , 'Relative residual tarsus' , 'Relative residual beak' , 'Male'),
                     use.comments = TRUE)
 str(LIOWpf)
-
 
 
 
@@ -138,17 +157,31 @@ str(LIOWpf)
 LIOWpf$bird_id<-str_trim(row.names(LIOWpf))
 LIOWch$bird_id<-str_trim(row.names(LIOWch))
 
+
 ## EXTRACT YEAR AND FEEDING REGIME
 dim(LIOWpf)
 LIOWpf[,18:20] <- str_split_fixed(string=LIOWpf$cohort,pattern=" / ",n=3)
 names(LIOWpf)[c(4,8,10,18:20)] <-c("hatch_date","residual.weight","residual.tarsus","year","feeding","origin")
 names(LIOWch)[5]<-"age_dept"
 
-LIOW<-LIOWpf %>% select(bird_id,ch,hatch_date,Male,year,residual.weight,residual.tarsus,feeding,origin) %>%
+
+
+### try and merge post-fledging datasets
+LIOWpf<-LIOWpf %>% left_join(ALLDAT2w, by="bird_id") %>%
+  mutate(CH2=paste(`20`,`22`,`24`,`26`,`28`,`30`,sep=""))
+
+LIOWpf %>%
+  select(bird_id,ch,hatch_date,CH2)
+
+
+
+#### MERGE ALL DATA FROM POST-FLEDGING AND REST OF YEAR
+
+LIOW<-LIOWpf %>% select(bird_id,CH2,hatch_date,Male,year,residual.weight,residual.tarsus,feeding,origin) %>%
   left_join(LIOWch[,c(1,3,5,8)],by=c("bird_id","year")) %>%
-  mutate(ch.y=ifelse(is.na(ch.y),"000000000000000000000000",ch.y)) %>%
-  mutate(ch=paste(ch.x,ch.y,sep="")) %>%
-  select(-ch.y,-ch.x)
+  mutate(ch=ifelse(is.na(ch),"000000000000000000000000",ch)) %>%
+  mutate(ch=paste(CH2,ch,sep="")) %>%
+  select(-CH2)
 
 dim(LIOW)
 head(LIOW)
@@ -182,17 +215,17 @@ year <- as.numeric(LIOW$year)-2008
 feeding <- ifelse(LIOW$feeding=="Unfed",0,1)
 #season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
 #season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
-season<-c(rep(1,7),rep(2,6),rep(3,10),rep(4,7)) ## Summer x 7, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
+season<-c(rep(1,6),rep(2,6),rep(3,10),rep(4,7)) ## Summer x 6, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
 
 winter<-ifelse(season==3,1,0) ## binary variable for winter 
 
-age <- LIOW[,9]   # age in days on 1 Aug
+age <- LIOW[,10]   # age in days on 1 Aug
 agemat<-CH
-agemat[,8]<-age
-for(col in 7:1){
+agemat[,7]<-age
+for(col in 6:1){
  agemat[,col]<-agemat[,col+1]-14
 }
-for(col in 9:N.occ){
+for(col in 8:N.occ){
   agemat[,col]<-agemat[,col-1]+14
 }
 
@@ -215,8 +248,8 @@ allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
   arrange(variable,year)
 
 ### ADD 7 OCCASIONS FOR POST_FLEDGING PERIOD
-allcov[,26:32]<-allcov[,3]
-names(allcov)[26:32]<-paste("pf",seq(1:7),sep="")
+allcov[,26:31]<-allcov[,3]
+names(allcov)[26:31]<-paste("pf",seq(1:6),sep="")
 
 
 ### PREPARE SEX COVARIATE
@@ -239,12 +272,13 @@ sum(y[,dim(y)[2]])/dim(y)[1]
 # 3 - zero in 14, 19, 20 and 21 in 2009 because no field effort at all
 
 ## updated on 27 Sept by adding 7 encounter occasions
+## changed on 12 Oct to 6 encounter occasions
 
 recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
 
-recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
-recap.mat[year==2,(c(11,16)+7)] <- 2
-recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
+recap.mat[year==1,(c(15,16,17,18)+6)] <- 2
+recap.mat[year==2,(c(11,16)+6)] <- 2
+recap.mat[year==1,(c(14,19,20,21)+6)] <- 3
 
 
 
