@@ -50,6 +50,7 @@ library(MCMCvis)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
 setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 load("data/LIOW_SURV_INPUT.RData")
 
 
@@ -70,7 +71,7 @@ for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
-                        beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
                         beta.male*sex[i] +
                         epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
@@ -166,7 +167,7 @@ INPUT <- list(y = CH, f = f,
               recap.mat=recap.mat,
               season=season,
               age=age_scale,
-              pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
+              #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
               #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
@@ -207,7 +208,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -356,7 +357,7 @@ AnnTab<-data.frame(season=c(1,1,1,1,2,3,3,3,3,4),
                    sex=1,
                    #size=0,
                    snow=scale(c(0,0,0,0,0,0,3,6,9,0))[,1])  %>% 
-  mutate(pf=ifelse(season==1,1,0)) %>%
+  #mutate(pf=ifelse(season==1,1,0)) %>%
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) 
 
 Xin<-AnnTab
@@ -373,7 +374,7 @@ for(s in 1:nrow(MCMCout)) {
              #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage*pf +
+             as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE

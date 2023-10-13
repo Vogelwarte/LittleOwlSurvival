@@ -6,7 +6,7 @@ for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
-                        beta.age*age[i,t]*pf[t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
                         beta.male*sex[i] +
                         epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
