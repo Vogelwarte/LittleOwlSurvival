@@ -381,9 +381,6 @@ known.male.ratio<-table(sex)[4]/sum(table(sex)[c(1,4)])
 sex[!(sex %in% c(0,1))]<-rbinom(n=sum(table(sex)[2:3]),size=1,prob=known.male.ratio)
 
 
-### CALCULATE PRIMITIVE SURVIVAL AS % OF INDIVIDUALS RECORDED IN LAST OCCASION - important for first line in manuscript
-sum(y[,dim(y)[2]])/dim(y)[1]
-
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # CREATE MATRIX FOR RECAPTURE PROBS
@@ -418,4 +415,6 @@ save.image("data/LIOW_SURV_INPUT.RData")
 dim(LIOW)[1] ## number of individuals
 length(unique(gsub("\\..*","",LIOWpf$bird_id))) ### number of broods
 
+### CALCULATE PRIMITIVE SURVIVAL AS % OF INDIVIDUALS RECORDED IN LAST OCCASION - important for first line in manuscript
+sum(y[,dim(y)[2]])/dim(y)[1]
 
