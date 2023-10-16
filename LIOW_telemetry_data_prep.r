@@ -130,22 +130,14 @@ allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
 allcov[,26:31]<-allcov[,3]
 names(allcov)[26:31]<-paste("pf",seq(1:6),sep="")
 
-### abandoned because difficult to replicate what Moggi did
-
-# ## https://rdrr.io/github/nFrechen/RgetDWDdata/man/getDWDdata.html
-# KlimadatenLB <- getDWDdata(Messstelle=04349, historisch=T)
-# # lädt den aktuellen Datensatz der Station Cottbus herunter
-# head(KlimadatenLB)
-# tail(KlimadatenLB)
-
 ### revisited on 16 Oct 2023 to include weather and rain from post-fledging period
 ## manually downloaded air temp and precip from: https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/
-## not sure where to get snow cover data from
+## manually downloaded snow cover data from: https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/daily/kl/historical/
 
 ## extract following variables:
 # mean.precip, total.precip -> PRECIP
 # mean.temp,mean.temp.min,mean.temp.max -> AirTemp
-# mean.temp.ground.min, day.below.zero.ground -> GroundTemp, but only available at 10 cm depth, so less prone to freezing?
+# mean.temp.ground.min, day.below.zero.ground -> GroundTemp, but only available at 5 cm depth, so less prone to freezing?
 # mean.snow.cover, day.snow.cover0,day.snow.cover3,day.snow.cover5	-> ??
 
 
@@ -195,6 +187,18 @@ precip<-read.table("data/weather/produkt_rr_stunde_20040601_20221231_04349.txt",
   group_by(STATIONS_ID,OCC,year) %>%
   summarise(start=min(DAY),mean.precip=mean(day_precip), total.precip=sum(day_precip), mean.snow=mean(snow_sum),total.snow=sum(snow_sum))
 
+snow<-read.table("data/weather/produkt_klima_tag_19871101_20221231_04349.txt", header=T, sep=";") %>%
+  select(STATIONS_ID,MESS_DATUM,SHK_TAG) %>%
+  mutate(Date=ymd(MESS_DATUM)) %>%
+  mutate(year=year(Date)) %>%
+  filter(year %in% c(2009,2010,2011,2012)) %>%
+  mutate(OCC=ceiling(week(Date)/2)) %>%
+  rename(snow=SHK_TAG) %>%  ### snow depth
+  filter(snow>-999) %>%
+  mutate(snowday1=ifelse(snow>0,1,0),snowday3=ifelse(snow>3,1,0),snowday5=ifelse(snow>5,1,0)) %>%
+  group_by(STATIONS_ID,OCC,year) %>%
+  summarise(day.snow.cover0=sum(snowday1),day.snow.cover3=sum(snowday3),day.snow.cover5=sum(snowday5),mean.snow.cover=mean(snow))
+
 
 ### COMBINE ALL WEATHER DATA
 dim(ground_temp)
@@ -202,7 +206,9 @@ dim(air_temp)
 dim(precip)
 weather.data<- ground_temp %>% left_join(air_temp, by=c('start','STATIONS_ID','OCC','year')) %>%
                     left_join(precip, by=c('start','STATIONS_ID','OCC','year')) %>%
-                    gather(key='variable', value='value', -STATIONS_ID,-OCC,-year,-start)
+                    left_join(snow, by=c('STATIONS_ID','OCC','year')) %>%
+                    gather(key='variable', value='value', -STATIONS_ID,-OCC,-year,-start) %>%
+                    filter(!variable %in% c("mean.snow","total.snow"))
 
 
 ### ADJUST ENCOUNTER OCCASIONS TO START on 15 MAY (to match with CMR data)
@@ -243,6 +249,13 @@ for (l in unique(allcov.new$variable)) {
   }
 }
 allcov.new<-allcov.new %>% filter(ch.year<2012)
+
+
+### IDENTIFY MISSING VALUES AND IMPUTE THEM
+apply(is.na(allcov.new),2,which)
+allcov.new[c(6,9,12,18),27:32]<-0 ### missing snow data in June/July imputed with 0
+
+
 
 
 
