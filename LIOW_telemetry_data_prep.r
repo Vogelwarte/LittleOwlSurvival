@@ -11,6 +11,8 @@
 
 ## extracted data from 15 June onwards, because overwinter data run until 15 Jun
 
+## added simple summary for manuscript on 16 Oct 2023
+
 library(tidyverse)
 library(data.table)
 library(lubridate)
@@ -110,6 +112,10 @@ ALLDAT2w<-ALLDAT %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # READ IN WEATHER DATA 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### pre-prepared winter weather data - these are indexed by encounter occasion and year
+wincov<-fread("data/LIOW_winter_covariates.csv")
+head(wincov)
+
 ### abandoned because difficult to replicate what Moggi did
 
 # ## https://rdrr.io/github/nFrechen/RgetDWDdata/man/getDWDdata.html
@@ -118,7 +124,40 @@ ALLDAT2w<-ALLDAT %>%
 # head(KlimadatenLB)
 # tail(KlimadatenLB)
 
+### revisited on 16 Oct 2023 to include weather and rain from post-fledging period
+## manually downloaded air temp and precip from: https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/hourly/
+## not sure where to get snow cover data from
 
+## extract following variables:
+# mean.precip, total.precip -> PRECIP
+# mean.temp,mean.temp.min,mean.temp.max -> AirTemp
+# mean.temp.ground.min, day.below.zero.ground -> GroundTemp
+# mean.snow.cover, day.snow.cover0,day.snow.cover3,day.snow.cover5	-> ??
+
+
+ground_temp<-read.table("data/weather/produkt_eb_stunde_19881101_20221231_04349.txt", header=T, sep=";") %>%
+  select(STATIONS_ID,MESS_DATUM,V_TE002) %>%
+  mutate(Date=ymd_h(MESS_DATUM)) %>%
+  mutate(year=year(Date)) %>%
+  filter(year %in% c(2009,2010,2011,2012)) %>%
+  rename(ground_temp=V_TE002) %>%
+  select(STATIONS_ID,Date,ground_temp)
+
+air_temp<-read.table("data/weather/produkt_tu_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
+  select(STATIONS_ID,MESS_DATUM,TT_TU) %>%
+  mutate(Date=ymd_h(MESS_DATUM)) %>%
+  mutate(year=year(Date)) %>%
+  filter(year %in% c(2009,2010,2011,2012)) %>%
+  rename(air_temp=TT_TU) %>%
+  select(STATIONS_ID,Date,air_temp)
+
+precip<-read.table("data/weather/produkt_rr_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
+  select(STATIONS_ID,MESS_DATUM,R1,WRTR) %>%
+  mutate(Date=ymd_h(MESS_DATUM)) %>%
+  mutate(year=year(Date)) %>%
+  filter(year %in% c(2009,2010,2011,2012)) %>%
+  rename(rain=R1,prec_type=WRTR) %>%  ### if prec_type ==7 then this is snow
+  select(STATIONS_ID,Date,rain,prec_type)
 
 
 
@@ -135,9 +174,6 @@ LIOWch<-convert.inp(inp.filename='data/1st year.inp',
                  use.comments = TRUE)
 str(LIOWch)
 
-
-wincov<-fread("data/LIOW_winter_covariates.csv")
-head(wincov)
 
 
 
@@ -287,5 +323,14 @@ recap.mat[year==1,(c(14,19,20,21)+6)] <- 3
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 save.image("data/LIOW_SURV_INPUT.RData")
 #renv::init()
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# NUMBERS NEEDED FOR MANUSCRIPT
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+dim(LIOW)[1] ## number of individuals
+length(unique(gsub("\\..*","",LIOWpf$bird_id))) ### number of broods
 
 
