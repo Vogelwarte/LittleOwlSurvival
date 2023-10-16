@@ -173,7 +173,8 @@ INPUT <- list(y = CH, f = f,
               #size=size,
               year=as.numeric(year),
               #weight=weight,
-              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
+              env=as.matrix((allcov.new %>% dplyr::filter(variable=="total.snow"))[,c(3:32)]))  ### select any of the winter covariates 
+              #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
 # Initial values 
