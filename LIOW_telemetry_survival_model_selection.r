@@ -63,8 +63,8 @@ inits <- function(){list(z = cjs.init.z(CH, f),
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-winter.vars<-expand.grid(var=unique(allcov$variable),
+## adjusted to new allcov.new matrix with manually downloaded weather data
+winter.vars<-expand.grid(var=unique(allcov.new$variable),
                          feeding=c("yes","no"),
                          size=c("size","mass","none"),
                          age=c("yes","no"),
@@ -82,13 +82,14 @@ for(s in 1:dim(winter.vars)[1]){
                 recap.mat=recap.mat,
                 season=season,
                 feeding=feeding,
-		    age=age_scale,
+		            age=age_scale,
                 sex=sex,
                 size=size,
                 weight=weight,
                 year=as.numeric(year),
-                #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates
-         	    env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,c(26:32,3:25)]))  ### select any of the winter covariates  
+		            env=as.matrix((allcov.new %>% dplyr::filter(variable==winter.vars$var[s]))[,c(3:32)]))  ### select any of the winter covariates FROM NEW DATA
+                #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates without post-fledging
+         	      #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,c(26:32,3:25)]))  ### select any of the winter covariates  with made-up post-fledging data
 
 # Call JAGS from R
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
