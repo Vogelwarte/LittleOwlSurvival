@@ -35,161 +35,23 @@ library(tidyverse)
 library(data.table)
 library(lubridate)
 library(tidyverse)
-library(geosphere)
+# library(geosphere)
 filter<-dplyr::filter
 select<-dplyr::select
 library(MCMCvis)
-library(RMark)
-library(stringr)
-library(R2jags)
-library(renv)
+# library(RMark)
+# library(stringr)
+# library(R2jags)
+# library(renv)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# LOAD DATA FROM MARK INP DATA FILE
+# LOAD DATA FROM PREPARED WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### data preparation moved to LIOW_telemetry_data_prep.r
 setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
-#setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
-
-LIOWch<-convert.inp(inp.filename='data/1st year.inp',
-                    group.df=data.frame(year=c("2009","2010","2011")),
-                 covariates = c('Male MS group','Age on Aug 1st','oldest residual.weight','oldest residual.tarsus'),
-                 use.comments = TRUE)
-str(LIOWch)
-
-
-wincov<-fread("data/LIOW_winter_covariates.csv")
-head(wincov)
-
-
-
-############ read in post-fledging data
-LIOWpf<-convert.inp(inp.filename='data/DOB post-fledging.inp',
-                    group.df=data.frame(cohort=c('2009 / Unfed / Original' , '2010 / Fed / Exchanged' , '2010 / Fed / Original' , '2010 / Unfed / Exchanged' , '2010 / Unfed / Original' , '2011 / Fed / Exchanged' , '2011 / Fed / Original' , '2011 / Unfed / Exchanged' , '2011 / Unfed / Original' )),
-                    covariates = c('Hatching date' , 'Brood size' , 'Rank' , 'Start feeding' , 'Residual weight' , 'Residual wing' , 'Residual tarsus' , 'Residual beak' , 'Relative residual weight' , 'Relative residual wing' , 'Relative residual tarsus' , 'Relative residual beak' , 'Male'),
-                    use.comments = TRUE)
-str(LIOWpf)
-
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# EXTRACT COVARIATES AND MATCH THE TWO ENCOUNTER HISTORIES
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## EXTRACT BIRD ID
-LIOWpf$bird_id<-str_trim(row.names(LIOWpf))
-LIOWch$bird_id<-str_trim(row.names(LIOWch))
-
-## EXTRACT YEAR AND FEEDING REGIME
-dim(LIOWpf)
-LIOWpf[,18:20] <- str_split_fixed(string=LIOWpf$cohort,pattern=" / ",n=3)
-names(LIOWpf)[c(4,8,10,18:20)] <-c("hatch_date","residual.weight","residual.tarsus","year","feeding","origin")
-names(LIOWch)[5]<-"age_dept"
-
-LIOW<-LIOWpf %>% select(bird_id,ch,hatch_date,Male,year,residual.weight,residual.tarsus,feeding,origin) %>%
-  left_join(LIOWch[,c(1,3,5,8)],by=c("bird_id","year")) %>%
-  mutate(ch.y=ifelse(is.na(ch.y),"000000000000000000000000",ch.y)) %>%
-  mutate(ch=paste(ch.x,ch.y,sep="")) %>%
-  select(-ch.y,-ch.x)
-
-dim(LIOW)
-head(LIOW)
-
-
-
-## CALCULATE AGE AT DEPARTURE FOR IND THAT DID NOT SURVIVE
-summary(LIOW$hatch_date)
-plot(LIOW$age_dept,LIOW$hatch_date)
-summary(lm(LIOW$age_dept~LIOW$hatch_date))
-LIOW$age_dept==(92-LIOW$hatch_date)  ### this is the conversion for age
-
-LIOW<-LIOW %>% mutate(age_dept=92-hatch_date)
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CREATE INPUT DATA FOR JAGS
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-N.occ<-nchar(LIOW$ch[1])
-
-### EXTRACT COLUMN VALUES INTO numeric vectors
-y <- data.frame(str_split_fixed(LIOW$ch, "", N.occ)) %>% mutate_at(1:N.occ,as.numeric)
-CH<-as.matrix(y, dimnames=F)
-year <- as.numeric(LIOW$year)-2008
-feeding <- ifelse(LIOW$feeding=="Unfed",0,1)
-#season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
-#season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
-season<-c(rep(1,7),rep(2,6),rep(3,10),rep(4,7)) ## Summer x 7, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
-
-winter<-ifelse(season==3,1,0) ## binary variable for winter 
-
-age <- LIOW[,9]   # age in days on 1 Aug
-agemat<-CH
-agemat[,8]<-age
-for(col in 7:1){
- agemat[,col]<-agemat[,col+1]-14
-}
-for(col in 9:N.occ){
-  agemat[,col]<-agemat[,col-1]+14
-}
-
-age_scale<-scale(agemat)
-simpleage_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
-weight <- LIOW[,5] # residual weight (seems to be standardized already)
-size <- LIOW[,6] # residual tarsus (seems to be standardized already)
-
-# Create vector with occasion of marking
-get.first <- function(x) min(which(x!=0))
-f <- apply(CH, 1, get.first)
-
-
-### PREPARE WINTER COVARIATES
-allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
-  group_by(variable) %>%
-  mutate(value=scale(value)[,1]) %>%   ## scale all variables for better estimation
-  ungroup() %>%
-  spread(key=occ, value=value) %>%
-  arrange(variable,year)
-
-### ADD 7 OCCASIONS FOR POST_FLEDGING PERIOD
-allcov[,26:32]<-allcov[,3]
-names(allcov)[26:32]<-paste("pf",seq(1:7),sep="")
-
-
-### PREPARE SEX COVARIATE
-## 80 individuals do not have an assigned sex, so we use the overall proportion and then randomly allocate birds to a sex
-sex <- LIOW[,3]
-table(sex)
-known.male.ratio<-table(sex)[4]/sum(table(sex)[c(1,4)])
-sex[!(sex %in% c(0,1))]<-rbinom(n=sum(table(sex)[2:3]),size=1,prob=known.male.ratio)
-
-
-### CALCULATE PRIMITIVE SURVIVAL AS % OF INDIVIDUALS RECORDED IN LAST OCCASION - important for first line in manuscript
-sum(y[,dim(y)[2]])/dim(y)[1]
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CREATE MATRIX FOR RECAPTURE PROBS
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 1 - general recap prob
-# 2 - limited effort: 15-18 in 2009, and 11 and 16 in 2010
-# 3 - zero in 14, 19, 20 and 21 in 2009 because no field effort at all
-
-## updated on 27 Sept by adding 7 encounter occasions
-
-recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
-
-recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
-recap.mat[year==2,(c(11,16)+7)] <- 2
-recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# SAVE WORKSPACE AND R ENVIRONMENT
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-save.image("data/LIOW_SURV_INPUT.RData")
-renv::init()
-
+setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+load("data/LIOW_SURV_INPUT.RData")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -207,7 +69,12 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] + beta.yr[year[i]] + beta.age*age[i,t] + beta.win*env[year[i],t] + beta.male*sex[i] + epsilon[i]    ## beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + beta.age*age[i,t] + 
+      logit(phi[i,t]) <- mu[season[t]] +
+                        beta.yr[year[i]] +
+                        #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.win*env[year[i],t] +
+                        beta.male*sex[i] +
+                        epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
@@ -239,7 +106,7 @@ for (y in 1:3) {
 }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-beta.age ~ dnorm(0, 1)                     # Prior for age effect 
+#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
@@ -299,13 +166,14 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
-              age=age_scale,
+              #age=age_scale,
+              #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
               #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
               year=as.numeric(year),
               #weight=weight,
-              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:32,3:25)]))  ### select any of the winter covariates 
+              env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
 # Initial values 
@@ -328,7 +196,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -349,7 +217,7 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 #                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.age","beta.male","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
                     model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
@@ -375,7 +243,7 @@ null.model$summary$quantiles[17,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.win","beta.male","beta.p.win","beta.p.yr","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.age","beta.male","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
@@ -483,13 +351,14 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
-AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
-                   age=c(45,98,180,190,200,210,300),
+AnnTab<-data.frame(season=c(1,1,1,1,2,3,3,3,3,4),
+                   age=c(15,30,45,60,98,180,190,200,210,300),
                    #age=mean(age),
                    sex=1,
                    #size=0,
-                   snow=scale(c(0,0,0,3,6,9,0))[,1])  %>%     
-  mutate(scaleage=(age-attr(age_scale, 'scaled:center')[1])/attr(age_scale, 'scaled:scale')[1]) 
+                   snow=scale(c(0,0,0,0,0,0,3,6,9,0))[,1])  %>% 
+  #mutate(pf=ifelse(season==1,1,0)) %>%
+  mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) 
 
 Xin<-AnnTab
 
@@ -503,7 +372,7 @@ for(s in 1:nrow(MCMCout)) {
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
              #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
-             as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
+             as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
@@ -523,11 +392,12 @@ for(s in 1:nrow(MCMCout)) {
 
 ### CREATE PLOT
 
-plotdat<-  MCMCpred %>%   rename(raw.surv=surv) %>%
+plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
+  mutate(age=rep(c(15,30,45,60,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(snow=c(0,0,0,0,3,6,9)) %>%
+  mutate(snow=c(0,0,0,0,0,0,0,3,6,9)) %>%
   arrange(age)
 
  
@@ -536,7 +406,7 @@ ggplot(plotdat)+
   geom_point(aes(x=age, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
   
   ## format axis ticks
-  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1:2,5,7)], labels=plotdat$Season[c(1:3,7)]) +
+  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(3,5,8,10)], labels=plotdat$Season[c(3,5,8,10)]) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
   scale_colour_manual(name="Days of >5 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
