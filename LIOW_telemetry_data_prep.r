@@ -102,7 +102,9 @@ dim(ALLDAT)
 ALLDAT2w<-ALLDAT %>%
   gather(key="OCC",value="STATE",-Individual, -Sex,-Treatment,-HatchOCC) %>%
   filter(!is.na(as.numeric(STATE))) %>%
-  mutate(OCC=round(as.numeric(OCC)/2)*2) %>%
+  #mutate(OCC=round(as.numeric(OCC)/2)*2) %>%
+  mutate(OCC=ceiling(as.numeric(OCC)/2)) %>%
+  mutate(HatchOCC=ceiling(as.numeric(HatchOCC)/2)) %>%
   group_by(Individual, Sex,Treatment,HatchOCC,OCC) %>%
   summarise(STATE=max(STATE, na.rm=T)) %>%
   spread(key=OCC, value=STATE, fill=0) %>%
@@ -115,6 +117,18 @@ ALLDAT2w<-ALLDAT %>%
 ### pre-prepared winter weather data - these are indexed by encounter occasion and year
 wincov<-fread("data/LIOW_winter_covariates.csv")
 head(wincov)
+
+### PREPARE WINTER COVARIATES
+allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
+  group_by(variable) %>%
+  mutate(value=scale(value,center=F)[,1]) %>%   ## scale all variables for better estimation
+  ungroup() %>%
+  spread(key=occ, value=value) %>%
+  arrange(variable,year)
+
+### ADD 7 OCCASIONS FOR POST_FLEDGING PERIOD
+allcov[,26:31]<-allcov[,3]
+names(allcov)[26:31]<-paste("pf",seq(1:6),sep="")
 
 ### abandoned because difficult to replicate what Moggi did
 
@@ -131,34 +145,104 @@ head(wincov)
 ## extract following variables:
 # mean.precip, total.precip -> PRECIP
 # mean.temp,mean.temp.min,mean.temp.max -> AirTemp
-# mean.temp.ground.min, day.below.zero.ground -> GroundTemp
+# mean.temp.ground.min, day.below.zero.ground -> GroundTemp, but only available at 10 cm depth, so less prone to freezing?
 # mean.snow.cover, day.snow.cover0,day.snow.cover3,day.snow.cover5	-> ??
 
 
+### READ IN THE RAW DATA ###
+
 ground_temp<-read.table("data/weather/produkt_eb_stunde_19881101_20221231_04349.txt", header=T, sep=";") %>%
-  select(STATIONS_ID,MESS_DATUM,V_TE002) %>%
+  select(STATIONS_ID,MESS_DATUM,V_TE005) %>%
   mutate(Date=ymd_h(MESS_DATUM)) %>%
-  mutate(year=year(Date)) %>%
+  mutate(year=year(Date),DAY=yday(Date)) %>%
   filter(year %in% c(2009,2010,2011,2012)) %>%
-  rename(ground_temp=V_TE002) %>%
-  select(STATIONS_ID,Date,ground_temp)
+  mutate(OCC=ceiling(week(Date)/2)) %>%
+  rename(ground_temp=V_TE005) %>%
+  filter(ground_temp>-999) %>%
+  group_by(STATIONS_ID,OCC,year,DAY) %>%
+  summarise(min.grd.tmp=min(ground_temp)) %>%
+  ungroup() %>%
+  mutate(frz.grd=ifelse(min.grd.tmp<0,1,0)) %>%
+  group_by(STATIONS_ID,OCC,year) %>%
+  summarise(start=min(DAY),mean.temp.ground.min=mean(min.grd.tmp),day.below.zero.ground=sum(frz.grd)) 
 
 air_temp<-read.table("data/weather/produkt_tu_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
   select(STATIONS_ID,MESS_DATUM,TT_TU) %>%
   mutate(Date=ymd_h(MESS_DATUM)) %>%
-  mutate(year=year(Date)) %>%
+  mutate(year=year(Date),DAY=yday(Date)) %>%
   filter(year %in% c(2009,2010,2011,2012)) %>%
+  mutate(OCC=ceiling(week(Date)/2)) %>%
   rename(air_temp=TT_TU) %>%
-  select(STATIONS_ID,Date,air_temp)
+  filter(air_temp>-999) %>%
+  group_by(STATIONS_ID,OCC,year,DAY) %>%
+  summarise(min.air.tmp=min(air_temp),mean.air.tmp=mean(air_temp)) %>%
+  ungroup() %>%
+  group_by(STATIONS_ID,OCC,year) %>%
+  summarise(start=min(DAY),mean.temp=mean(mean.air.tmp),mean.temp.min=mean(min.air.tmp),mean.temp.max=max(mean.air.tmp)) 
 
 precip<-read.table("data/weather/produkt_rr_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
   select(STATIONS_ID,MESS_DATUM,R1,WRTR) %>%
-  mutate(Date=ymd_h(MESS_DATUM)) %>%
+  mutate(Date=ymd_h(MESS_DATUM),DAY=yday(Date)) %>%
   mutate(year=year(Date)) %>%
   filter(year %in% c(2009,2010,2011,2012)) %>%
-  rename(rain=R1,prec_type=WRTR) %>%  ### if prec_type ==7 then this is snow
-  select(STATIONS_ID,Date,rain,prec_type)
+  mutate(OCC=ceiling(week(Date)/2)) %>%
+  rename(rain=R1) %>%  ### if prec_type ==7 then this is snow
+  mutate(snow=ifelse(WRTR==7,rain,ifelse(WRTR==8,rain*0.5,0))) %>%
+  filter(rain>-999) %>%
+  group_by(STATIONS_ID,OCC,year,DAY) %>%
+  summarise(day_precip=sum(rain),snow_sum=sum(snow)) %>%
+  ungroup() %>%
+  group_by(STATIONS_ID,OCC,year) %>%
+  summarise(start=min(DAY),mean.precip=mean(day_precip), total.precip=sum(day_precip), mean.snow=mean(snow_sum),total.snow=sum(snow_sum))
 
+
+### COMBINE ALL WEATHER DATA
+dim(ground_temp)
+dim(air_temp)
+dim(precip)
+weather.data<- ground_temp %>% left_join(air_temp, by=c('start','STATIONS_ID','OCC','year')) %>%
+                    left_join(precip, by=c('start','STATIONS_ID','OCC','year')) %>%
+                    gather(key='variable', value='value', -STATIONS_ID,-OCC,-year,-start)
+
+
+### ADJUST ENCOUNTER OCCASIONS TO START on 15 MAY (to match with CMR data)
+yday(ymd("2009-05-15"))
+week(ymd("2009-05-15"))
+ceiling(week(ymd("2009-05-15"))/2)  
+  
+weather.cov.matrix<- 
+  weather.data %>% ungroup() %>%
+  mutate(ch.occ.prel=OCC-9) %>%
+  mutate(ch.year=ifelse(ch.occ.prel<1,year-1,year)) %>%
+  mutate(ch.occ=ifelse(ch.occ.prel<1,ch.occ.prel+max(ch.occ.prel)+9,ch.occ.prel)) %>%
+  filter(ch.year>2008) %>%
+  spread(key=variable, value=value) %>%
+  arrange(ch.year,ch.occ)
+  
+
+### CREATE A MATRIX SIMILAR TO ALLCOV ABOVE BUT WITH ACTUAL DATA
+
+allcov.new<-weather.cov.matrix %>% 
+  select(-STATIONS_ID,-OCC,-year,-start,-ch.occ.prel) %>%
+  gather(key="variable", value="value",-ch.occ,-ch.year) %>%
+  group_by(variable) %>%
+  mutate(value=scale(value,center=F)[,1]) %>%   ## scale all variables for better estimation
+  ungroup() %>%
+  spread(key=ch.occ, value=value) %>%
+  arrange(variable,ch.year)
+
+dim(allcov.new)
+
+### ADD 6 OCCASIONS FOR SUBSEQUENT BREEDING PERIOD FROM THE NEXT YEAR's START
+allcov.new$'28'<-0
+allcov.new$'29'<-0
+allcov.new$'30'<-0
+for (l in unique(allcov.new$variable)) {
+  for (y in 2009:2011) {
+    allcov.new[allcov.new$variable==l & allcov.new$ch.year==y,27:32]<-allcov.new[allcov.new$variable==l & allcov.new$ch.year==y+1,3:8]
+  }
+}
+allcov.new<-allcov.new %>% filter(ch.year<2012)
 
 
 
@@ -204,7 +288,8 @@ names(LIOWch)[5]<-"age_dept"
 
 ### try and merge post-fledging datasets
 LIOWpf<-LIOWpf %>% left_join(ALLDAT2w, by="bird_id") %>%
-  mutate(CH2=paste(`20`,`22`,`24`,`26`,`28`,`30`,sep=""))
+  #mutate(CH2=paste(`20`,`22`,`24`,`26`,`28`,`30`,sep=""))
+  mutate(CH2=paste(`10`,`11`,`12`,`13`,`14`,`15`,sep=""))
 
 LIOWpf %>%
   select(bird_id,ch,hatch_date,CH2)
@@ -273,19 +358,6 @@ size <- LIOW[,6] # residual tarsus (seems to be standardized already)
 # Create vector with occasion of marking
 get.first <- function(x) min(which(x!=0))
 f <- apply(CH, 1, get.first)
-
-
-### PREPARE WINTER COVARIATES
-allcov<-wincov %>% gather(key="variable", value="value",-occ,-year) %>%
-  group_by(variable) %>%
-  mutate(value=scale(value)[,1]) %>%   ## scale all variables for better estimation
-  ungroup() %>%
-  spread(key=occ, value=value) %>%
-  arrange(variable,year)
-
-### ADD 7 OCCASIONS FOR POST_FLEDGING PERIOD
-allcov[,26:31]<-allcov[,3]
-names(allcov)[26:31]<-paste("pf",seq(1:6),sep="")
 
 
 ### PREPARE SEX COVARIATE
