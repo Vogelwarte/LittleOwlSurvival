@@ -50,7 +50,7 @@ library(MCMCvis)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
 setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
-setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+#setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 load("data/LIOW_SURV_INPUT.RData")
 
 
@@ -237,8 +237,8 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[18,c(3,1,5)] +2 <
-null.model$summary$quantiles[17,c(3,1,5)]
+full.model$summary$quantiles[17,c(3,1,5)] +2 <
+null.model$summary$quantiles[16,c(3,1,5)]
 
 
 
@@ -251,13 +251,13 @@ MCMCdiag(full.model$mcmc,
          round = 3,
          file_name = 'LIOW_survival',
          dir = 'C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/output',
-         mkdir = 'LIOW_v5',
-         add_field = '5.0',
+         mkdir = 'LIOW_v6',
+         add_field = '6.0',
          add_field_names = 'Data version',
          save_obj = TRUE,
-         obj_name = 'LIOW-fit-27Sept2023',
+         obj_name = 'LIOW-fit-16Oct2023',
          add_obj = list(INPUT, sessionInfo()),
-         add_obj_names = c('surv-data-27Sept2023', 'session-info-27Sept2023'))
+         add_obj_names = c('surv-data-16Oct2023', 'session-info-16Oct2023'))
 
 
 
@@ -351,12 +351,12 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
 
-AnnTab<-data.frame(season=c(1,1,1,1,2,3,3,3,3,4),
-                   age=c(15,30,45,60,98,180,190,200,210,300),
+AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
+                   age=c(45,98,180,190,200,210,300),
                    #age=mean(age),
                    sex=1,
                    #size=0,
-                   snow=scale(c(0,0,0,0,0,0,3,6,9,0))[,1])  %>% 
+                   snow=scale(c(0,0,0,3,6,9,0))[,1])  %>% 
   #mutate(pf=ifelse(season==1,1,0)) %>%
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) 
 
@@ -374,7 +374,7 @@ for(s in 1:nrow(MCMCout)) {
              #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
+             #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
@@ -393,11 +393,11 @@ for(s in 1:nrow(MCMCout)) {
 ### CREATE PLOT
 
 plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
-  mutate(age=rep(c(15,30,45,60,98,180,190,200,210,300), ns*nc)) %>%
+  mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(snow=c(0,0,0,0,0,0,0,3,6,9)) %>%
+  mutate(snow=c(0,0,0,0,3,6,9)) %>%
   arrange(age)
 
  
@@ -406,7 +406,9 @@ ggplot(plotdat)+
   geom_point(aes(x=age, y=surv,colour=factor(snow)),size=2)+     ## , linetype=Origin
   
   ## format axis ticks
-  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(3,5,8,10)], labels=plotdat$Season[c(3,5,8,10)]) +
+  #scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(3,5,8,10)], labels=plotdat$Season[c(3,5,8,10)]) +
+  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1,2,4,7)], labels=plotdat$Season[c(1,2,4,7)]) +
+  scale_y_continuous(name="Biweekly survival probability", limits=c(0.7,1), breaks=seq(0.7,1,0.05), labels=seq(0.7,1,0.05)) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
   scale_colour_manual(name="Days of >5 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
@@ -426,7 +428,7 @@ ggplot(plotdat)+
         strip.background=element_rect(fill="white", colour="black"))
 
 
-ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/Seasonal_survival_LIOW_noage.jpg", height=7, width=11)
+ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
 ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 
 
@@ -477,15 +479,15 @@ ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival
 
 
 stage.surv<-  plotdat %>%
-  mutate(dur=c(7,6,10,10,10,10)) %>%
+  mutate(dur=c(5,6,10,10,10,10,5)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 
 ### ANNUAL SURVIVAL IN MILD YEAR
-c(prod(stage.surv[1:3,4])*0.55,prod(stage.surv[1:3,5])*0.55,prod(stage.surv[1:3,6])*0.55)
+c(prod(stage.surv[c(1:3,7),4]),prod(stage.surv[c(1:3,7),5]),prod(stage.surv[c(1:3,7),6]))
 
 ### ANNUAL SURVIVAL IN SEVERE WINTER YEAR
-c(prod(stage.surv[c(1,2,6),4])*0.55,prod(stage.surv[c(1,2,6),5])*0.55,prod(stage.surv[c(1,2,6),6])*0.55)
+c(prod(stage.surv[c(1:2,6:7),4]),prod(stage.surv[c(1:2,6:7),5]),prod(stage.surv[c(1:2,6:7),6]))
 
 # ann.surv<- MCMCpred2 %>%
 #   group_by(simul) %>%
@@ -495,24 +497,24 @@ c(prod(stage.surv[c(1,2,6),4])*0.55,prod(stage.surv[c(1,2,6),5])*0.55,prod(stage
 # ann.surv
 
 
-Table1<- stage.surv[c(2,3,1),] %>%
+Table1<- stage.surv[c(1:3,7),] %>%
   mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   mutate(Duration=dur*2) %>%
   select(Season,Duration,mild.survival) %>%
   bind_rows(data.frame(Season="Annual",Duration=52,
                        mild.survival=sprintf("%s (%s - %s)",
-                                        round(prod(stage.surv[1:3,4])*0.55,3),
-                                        round(prod(stage.surv[1:3,5])*0.55,3),
-                                        round(prod(stage.surv[1:3,6])*0.55,3))))
+                                        round(prod(stage.surv[c(1:3,7),4]),3),
+                                        round(prod(stage.surv[c(1:3,7),5]),3),
+                                        round(prod(stage.surv[c(1:3,7),6]),3))))
 
-Table1<- stage.surv[c(2,6,1),] %>%
+Table1<- stage.surv[c(1:2,6:7),] %>%
   mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   select(Season,harsh.survival) %>%
   bind_rows(data.frame(Season="Annual",
                        harsh.survival=sprintf("%s (%s - %s)",
-                                        round(prod(stage.surv[c(1,2,6),4])*0.55,3),
-                                        round(prod(stage.surv[c(1,2,6),5])*0.55,3),
-                                        round(prod(stage.surv[c(1,2,6),6])*0.55,3))))  %>%
+                                        round(prod(stage.surv[c(1:2,6:7),4]),3),
+                                        round(prod(stage.surv[c(1:2,6:7),5]),3),
+                                        round(prod(stage.surv[c(1:2,6:7),6]),3))))  %>%
   left_join(Table1, by="Season") %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
