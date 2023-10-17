@@ -7,15 +7,19 @@
 # based on data by Marco Perrig
 # this script only performs model selection and requires input data to be generated from "LIOW_telemetry_survival.r"
 
+# updated on 17 OCT 2023 to include parallel processing to work through >100 models in less time
+# parallel computation taken from: https://stackoverflow.com/questions/53597282/running-multiple-parallel-processes-in-parallel-r
+
 library(runjags)
 library(tidyverse)
 library(data.table)
+library(foreach)
 filter<-dplyr::filter
 select<-dplyr::select
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# LOAD DATA FROM PREAPERED ENVIRONMENT FILE
+# LOAD DATA FROM PREPARED ENVIRONMENT FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
@@ -63,8 +67,8 @@ inits <- function(){list(z = cjs.init.z(CH, f),
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## adjusted to new allcov.new matrix with manually downloaded weather data
-winter.vars<-expand.grid(var=unique(allcov.new$variable),
+
+winter.vars<-expand.grid(var=unique(allcov$variable),
                          feeding=c("yes","no"),
                          size=c("size","mass","none"),
                          age=c("yes","no"),
@@ -73,8 +77,27 @@ winter.vars<-expand.grid(var=unique(allcov.new$variable),
                          beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0,
                          beta_feed=0, beta_feed_lcl=0,beta_feed_ucl=0)
 param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed")
-for(s in 1:dim(winter.vars)[1]){
 
+
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# START PARALLEL PROCESSING
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+n.cores <- 16  ## this is to be run on the server
+registerDoParallel(n.cores)
+
+#Fit models in parallel, with chains running in parallel.----
+
+
+output <- 
+  foreach(s = dim(winter.vars)[1],.combine=rbind) %dopar% {
+##for(s in 1:dim(winter.vars)[1]){   ## the old sequential loop
+  output<-winter.vars[s,]
   INPUT <- list(y = CH, f = f,
                 nind = dim(CH)[1],
                 n.occasions = dim(CH)[2],
@@ -87,51 +110,51 @@ for(s in 1:dim(winter.vars)[1]){
                 size=size,
                 weight=weight,
                 year=as.numeric(year),
-		            env=as.matrix((allcov.new %>% dplyr::filter(variable==winter.vars$var[s]))[,c(3:32)]))  ### select any of the winter covariates FROM NEW DATA
-                #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates without post-fledging
-         	      #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,c(26:32,3:25)]))  ### select any of the winter covariates  with made-up post-fledging data
+		            env=as.matrix((allcov.new %>% dplyr::filter(variable==winter.vars$var[s]))[,c(3:32)]))  ### select any of the winter covariates
+                #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates
+         	    #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,c(26:32,3:25)]))  ### select any of the winter covariates  
 
 # Call JAGS from R
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
 
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
 
 ### add models with feeding ###
@@ -139,42 +162,42 @@ for(s in 1:dim(winter.vars)[1]){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
 
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
   
   if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
+                         method="parallel")
   }
 
 
@@ -207,6 +230,9 @@ if(winter.vars$feeding[s]== "yes"){
 }}
 
 fwrite(winter.vars,"LIOW_win_var_selection_DIC_table.csv")
+
+#return output
+return(output)
 #save.image("output/LIOW_survival_output.RData")
 } ### end loop over all models
 
