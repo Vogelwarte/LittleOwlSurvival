@@ -248,8 +248,8 @@ null.model$summary$quantiles[16,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.age","beta.male","beta.p.win","mean.p"))
-MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.age","beta.p.win","beta.male","beta.simpleage","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.p.win","mean.p"))
+MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","beta.male","beta.simpleage","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
