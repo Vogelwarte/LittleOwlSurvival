@@ -29,6 +29,9 @@
 ## added creation of R env file for outsourcing the model selection
 ## moved model selection into separate script to be run on server
 
+## when including all data the temperature has the most outstanding effect, not snow cover,
+## therefore need to build model with weather only affecting winter survival
+
 
 library(runjags)
 library(tidyverse)
@@ -62,7 +65,7 @@ load("data/LIOW_SURV_INPUT.RData")
 
 
 # Specify model in JAGS language
-sink("models/LIOW_CJS_fullyear.jags")
+sink("models/LIOW_CJS_fullyear_winenv.jags")
 cat("
 model {
 
@@ -72,7 +75,7 @@ for (i in 1:nind){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
-                        beta.win*env[year[i],t] +
+                        beta.win*env[year[i],t]*winter[t] +
                         beta.male*sex[i] +
                         epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
@@ -166,6 +169,7 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
+              winter=ifelse(season==3,1,0),
               #age=age_scale,
               #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
               #simpleage=as.numeric(simpleage_scale),
@@ -173,7 +177,7 @@ INPUT <- list(y = CH, f = f,
               #size=size,
               year=as.numeric(year),
               #weight=weight,
-              env=as.matrix((allcov.new %>% dplyr::filter(variable=="total.snow"))[,c(3:32)]))  ### select any of the winter covariates 
+              env=as.matrix((allcov.new %>% dplyr::filter(variable=="mean.temp.ground.min"))[,c(3:32)]))  ### select any of the winter covariates 
               #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
@@ -209,7 +213,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_winenv.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
