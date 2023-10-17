@@ -80,10 +80,6 @@ param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed"
 
 
 
-
-
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # START PARALLEL PROCESSING
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,9 +90,11 @@ registerDoParallel(n.cores)
 #Fit models in parallel, with chains running in parallel.----
 
 
-output <- 
-  foreach(s = dim(winter.vars)[1],.combine=rbind) %dopar% {
-##for(s in 1:dim(winter.vars)[1]){   ## the old sequential loop
+mod.sel.results <- 
+  foreach(s = 1:dim(winter.vars)[1],.combine=rbind, .packages='run.jags',.inorder=FALSE,.errorhandling="remove",.verbose=TRUE) %dopar% {
+    
+    
+  ##for(s in 1:dim(winter.vars)[1]){   ## the old sequential loop
   output<-winter.vars[s,]
   INPUT <- list(y = CH, f = f,
                 nind = dim(CH)[1],
@@ -110,47 +108,47 @@ output <-
                 size=size,
                 weight=weight,
                 year=as.numeric(year),
-		            env=as.matrix((allcov.new %>% dplyr::filter(variable==winter.vars$var[s]))[,c(3:32)]))  ### select any of the winter covariates
+		            env=as.matrix((allcov.new %>% dplyr::filter(variable==output$var))[,c(3:32)]))  ### select any of the winter covariates
                 #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates
          	    #env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,c(26:32,3:25)]))  ### select any of the winter covariates  
 
 # Call JAGS from R
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
+  if(output$size=="none" & output$age== "no" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
 
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
+  if(output$size=="size" & output$age== "no" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "no"){
+  if(output$size=="mass" & output$age== "no" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
+  if(output$size=="size" & output$age== "yes" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
+  if(output$size=="mass" & output$age== "yes" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "no"){
+  if(output$size=="none" & output$age== "yes" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
@@ -158,42 +156,42 @@ output <-
   }
 
 ### add models with feeding ###
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
+  if(output$size=="none" & output$age== "no" & output$feeding== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_noage.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
 
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
+  if(output$size=="size" & output$age== "no" & output$feeding== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_noage_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no" & winter.vars$feeding[s]== "yes"){
+  if(output$size=="mass" & output$age== "no" & output$feeding== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_noage_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
+  if(output$size=="size" & output$age== "yes" & output$feeding== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_size.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
+  if(output$size=="mass" & output$age== "yes" & output$feeding== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed_mass.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
   
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes" & winter.vars$feeding[s]== "yes"){
+  if(output$size=="none" & output$age== "yes" & output$feeding== "yes"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
                          model="models/LIOW_CJS_fullyear_feed.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
@@ -206,30 +204,30 @@ output <-
 ##### WRITING OUTPUT OF PARAMETERS IN THE MODEL #########output/
 
 
-winter.vars[s,5:7]<-modelfit$summary$quantiles[1,c(3,1,5)]
-winter.vars[s,8:10]<-modelfit$summary$quantiles[2,c(3,1,5)]
+output[,5:7]<-modelfit$summary$quantiles[1,c(3,1,5)]
+output[,8:10]<-modelfit$summary$quantiles[2,c(3,1,5)]
 
-if(winter.vars$size[s] %in% c("mass","size")){
-  winter.vars[s,11:13]<-modelfit$summary$quantiles[3,c(3,1,5)]
+if(output$size %in% c("mass","size")){
+  output[,11:13]<-modelfit$summary$quantiles[3,c(3,1,5)]
 }
-if(winter.vars$age[s]== "yes"){
-	if(winter.vars$size[s] %in% c("mass","size")){	
-  	winter.vars[s,14:16]<-modelfit$summary$quantiles[4,c(3,1,5)]
-	}else{winter.vars[s,14:16]<-modelfit$summary$quantiles[3,c(3,1,5)]}
+if(output$age== "yes"){
+	if(output$size %in% c("mass","size")){	
+  	output[,14:16]<-modelfit$summary$quantiles[4,c(3,1,5)]
+	}else{output[,14:16]<-modelfit$summary$quantiles[3,c(3,1,5)]}
 }
 
-if(winter.vars$feeding[s]== "yes"){
- if(winter.vars$age[s]== "yes"){
-	if(winter.vars$size[s] %in% c("mass","size")){	
-  	winter.vars[s,17:19]<-modelfit$summary$quantiles[5,c(3,1,5)]
-	}else{winter.vars[s,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]}
+if(output$feeding== "yes"){
+ if(output$age== "yes"){
+	if(output$size %in% c("mass","size")){	
+  	output[,17:19]<-modelfit$summary$quantiles[5,c(3,1,5)]
+	}else{output[,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]}
  }else{
-	if(winter.vars$size[s] %in% c("mass","size")){	
-  	winter.vars[s,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]
-	}else{winter.vars[s,17:19]<-modelfit$summary$quantiles[3,c(3,1,5)]}
+	if(output$size %in% c("mass","size")){	
+  	output[s,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]
+	}else{output[s,17:19]<-modelfit$summary$quantiles[3,c(3,1,5)]}
 }}
 
-fwrite(winter.vars,"LIOW_win_var_selection_DIC_table.csv")
+write.csv(output,"LIOW_win_var_selection_DIC_table.csv", append=TRUE)
 
 #return output
 return(output)
@@ -239,9 +237,15 @@ return(output)
 
 ############################-----------------------------------------------------------------------################################################################
 
-winter.vars<-winter.vars %>% 
-  mutate(DIC=if_else(age=="yes",if_else(size=="none",dic_med+2,dic_med+4),if_else(size=="none",dic_med,dic_med+2))) %>%
+mod.sel.results<-mod.sel.results %>% 
+  mutate(DIC=if_else(age=="yes",
+                     if_else(size=="none",
+                             if_else(feeding=="yes",dic_med+4,dic_med+2),
+                             if_else(feeding=="yes",dic_med+6,dic_med+4)),
+                     if_else(size=="none",
+                             if_else(feeding=="yes",dic_med+2,dic_med),
+                             if_else(feeding=="yes",dic_med+4,dic_med+2)))) %>%
   arrange(DIC)
 
-winter.vars
-fwrite(winter.vars,"output/LIOW_win_var_selection_DIC_table.csv")
+mod.sel.results
+fwrite(mod.sel.results,"output/LIOW_model_selection_DIC_table.csv")
