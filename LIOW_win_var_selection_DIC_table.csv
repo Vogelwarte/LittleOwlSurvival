@@ -1,2 +1,2 @@
-"","var","feeding","size","age","dic_med","dic_lcl","dic_ucl","beta_med","beta_lcl","beta_ucl","beta_size","beta_size_lcl","beta_size_ucl","beta_age_med","beta_age_lcl","beta_age_ucl","beta_feed","beta_feed_lcl","beta_feed_ucl"
-"132","total.precip","no","none","no",1023.335,968.481075,1095.6535,-0.1416255,-0.49152635,-0.006173465,0,0,0,0,0,0,0,0,0
+"","var","feeding","size","age","dic_med","dic_lcl","dic_ucl","beta_med","beta_lcl","beta_ucl","beta_size","beta_size_lcl","beta_size_ucl","beta_age_med","beta_age_lcl","beta_age_ucl","beta_feed","beta_feed_lcl","beta_feed_ucl","beta_winP","beta_winP_lcl","beta_winP_ucl"
+"132","total.precip","no","none","no",1030.505,953.84485,1106.062,-0.05252345,-0.2243823,-0.00166441275,0,0,0,0,0,0,0,0,0,0.3852535,-0.04495962,0.86990585

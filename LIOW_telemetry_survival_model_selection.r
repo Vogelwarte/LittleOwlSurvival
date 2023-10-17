@@ -117,7 +117,7 @@ mod.sel.results <-
 # Call JAGS from R
   if(output$size=="none" & output$age== "no" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="models/LIOW_CJS_fullyear_winenv.jags",
+                         model="models/LIOW_CJS_fullyear.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
@@ -252,3 +252,4 @@ mod.sel.results<-mod.sel.results %>%
 
 mod.sel.results
 fwrite(mod.sel.results,"output/LIOW_model_selection_DIC_table_winenv.csv")
+
