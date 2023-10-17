@@ -1,93 +1,184 @@
 var,feeding,size,age,dic_med,dic_lcl,dic_ucl,beta_med,beta_lcl,beta_ucl,beta_size,beta_size_lcl,beta_size_ucl,beta_age_med,beta_age_lcl,beta_age_ucl,beta_feed,beta_feed_lcl,beta_feed_ucl
+<<<<<<< Updated upstream
 day.below.zero.ground,yes,size,yes,1019.60147091039,952.435223070427,1091.92701598161,-0.0646180543452894,-0.211604479739268,-0.00290185358869229,0.100594377082341,0.00385208861614053,0.207659373164265,-0.0827448750252559,-0.713758267692275,0.498479557585593,0.696897407356083,0.209301040629322,1.2499065038288
 mean.precip,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,yes,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,no,size,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,yes,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,no,mass,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,yes,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,no,none,yes,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,yes,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,no,size,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,yes,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.snow,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover0,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover3,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+day.snow.cover5,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.precip,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+mean.snow.cover,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
 mean.temp,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.ground.min,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.max,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+<<<<<<< Updated upstream
 total.snow,no,mass,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 day.below.zero.ground,yes,none,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.precip,yes,none,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -107,3 +198,27 @@ mean.temp.max,no,none,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 mean.temp.min,no,none,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.precip,no,none,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 total.snow,no,none,no,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+=======
+day.below.zero.ground,yes,none,no,1029.02051343705,958.034018185618,1113.77890229173,-0.0603348535102268,-0.211840358454634,-0.00253184626852719,0,0,0,0,0,0,0.709903715142275,0.255599460752187,1.25609828966894
+day.snow.cover0,yes,none,no,1015.91917072737,949.495713000398,1091.38784370127,-0.482761399411248,-0.712318390184976,-0.257010641800075,0,0,0,0,0,0,0.776104897006673,0.298261721161535,1.28633398233074
+day.snow.cover3,yes,none,no,1017.88264324201,950.688662948469,1088.97732356657,-0.426758430071587,-0.616650551044643,-0.232195652038981,0,0,0,0,0,0,0.789769146125256,0.309757673156088,1.29003050611525
+day.snow.cover5,yes,none,no,1020.1317830459,952.816763777415,1092.29796043359,-0.352707203289376,-0.541212847486127,-0.154885146994527,0,0,0,0,0,0,0.789828183975423,0.308149932893715,1.29967397894165
+mean.precip,yes,none,no,1027.22717865067,958.997402621349,1100.0681566959,-0.0358261139878397,-0.165658622438812,-0.00147774019791244,0,0,0,0,0,0,0.761332447516069,0.295665624742177,1.25572401197176
+mean.snow.cover,yes,none,no,1018.16849573296,951.067887385005,1093.61997604603,-0.325306163079904,-0.482729389056117,-0.158592672942474,0,0,0,0,0,0,0.780404689314722,0.295052320429634,1.2786671103207
+mean.temp,yes,none,no,1002.51416267296,933.602629464745,1080.13885578629,-0.0982864630816297,-0.378424191611498,-0.0045777260474564,0,0,0,0,0,0,0.774663792186335,0.303159990008255,1.26597530664417
+mean.temp.ground.min,yes,none,no,999.990349997326,932.242346338433,1072.88121346823,-0.159682027072343,-0.493488136754638,-0.00825081148822949,0,0,0,0,0,0,0.791380960601866,0.329702509200612,1.28811205862761
+mean.temp.max,yes,none,no,1002.10609563104,937.401156698592,1075.29299622588,-0.175291899895048,-0.563684425175391,-0.00784048777927486,0,0,0,0,0,0,0.78175979352592,0.317433358097061,1.2821350969496
+mean.temp.min,yes,none,no,1003.39788761938,935.985293849221,1075.9277599144,-0.0610679956848983,-0.260390799399052,-0.00245438602865944,0,0,0,0,0,0,0.768986844353165,0.302494181562678,1.26369137598121
+total.precip,yes,none,no,1021.47505014119,953.959432201237,1096.927942878,-0.0549975376689421,-0.231069086370753,-0.00232996927568705,0,0,0,0,0,0,0.758959745600701,0.312641701722056,1.22345549442587
+day.below.zero.ground,no,none,no,1024.84340428385,957.422037051288,1095.79227053678,-0.0633660307684686,-0.212904667713636,-0.00316301507278436,0,0,0,0,0,0,0,0,0
+day.snow.cover0,no,none,no,1018.22666648061,950.773850349299,1091.35618521567,-0.487457217093863,-0.711820758258203,-0.254616140008364,0,0,0,0,0,0,0,0,0
+day.snow.cover3,no,none,no,1020.57932557524,954.03392406709,1092.99130970546,-0.426396979247074,-0.607706842064789,-0.228107597972514,0,0,0,0,0,0,0,0,0
+day.snow.cover5,no,none,no,1022.8780550639,952.287650378921,1095.56840744102,-0.35886531100511,-0.541774108515311,-0.155483590534148,0,0,0,0,0,0,0,0,0
+mean.precip,no,none,no,1027.68183389266,960.621427210454,1103.58504389917,-0.0381746687749952,-0.172275536015616,-0.00155482099016779,0,0,0,0,0,0,0,0,0
+mean.snow.cover,no,none,no,1022.04302702983,953.329984077838,1098.27001547629,-0.32421554197918,-0.484426359394397,-0.151679294714749,0,0,0,0,0,0,0,0,0
+mean.temp,no,none,no,1005.54441221054,937.243446844838,1076.37212881355,-0.0894050484832421,-0.370638904419361,-0.00359267422092735,0,0,0,0,0,0,0,0,0
+mean.temp.ground.min,no,none,no,1003.40536970582,935.676214570636,1078.14965174158,-0.146925803990993,-0.474148940003592,-0.00722706512499287,0,0,0,0,0,0,0,0,0
+mean.temp.max,no,none,no,1005.79063233334,941.098272089529,1078.28241795679,-0.150771477288271,-0.543519901354188,-0.00631684006325869,0,0,0,0,0,0,0,0,0
+mean.temp.min,no,none,no,1007.85205469013,940.690490703742,1080.68960164828,-0.0562604746074818,-0.242522926322021,-0.00242404831799268,0,0,0,0,0,0,0,0,0
+total.precip,no,none,no,1024.60900776735,957.878474446488,1098.12912028984,-0.0547724651929042,-0.218907127328093,-0.00204481348933215,0,0,0,0,0,0,0,0,0
+>>>>>>> Stashed changes
