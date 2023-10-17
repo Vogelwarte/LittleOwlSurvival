@@ -53,11 +53,11 @@ cjs.init.z <- function(ch,f){
 
 # MCMC settings
 nt <- 6
-nb <- 200
+nb <- 20
 nc <- 3
 nad<-10
-ns<-2000
-ni<-3500
+ns<-200
+ni<-350
 
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 95, 10),
@@ -68,15 +68,16 @@ inits <- function(){list(z = cjs.init.z(CH, f),
 # EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-winter.vars<-expand.grid(var=unique(allcov$variable),
+winter.vars<-expand.grid(var=unique(allcov.new$variable),
                          feeding=c("yes","no"),
                          size=c("size","mass","none"),
                          age=c("yes","no"),
                          dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0,
                          beta_size=0, beta_size_lcl=0,beta_size_ucl=0,
                          beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0,
-                         beta_feed=0, beta_feed_lcl=0,beta_feed_ucl=0)
-param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed")
+                         beta_feed=0, beta_feed_lcl=0,beta_feed_ucl=0,
+                         beta_winP=0, beta_winP_lcl=0,beta_winP_ucl=0)
+param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed","beta.p.win")
 
 
 
@@ -84,14 +85,14 @@ param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed"
 # START PARALLEL PROCESSING
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-n.cores <- 16  ## this is to be run on the server
+n.cores <- 8  ## this is to be run on the server
 registerDoParallel(n.cores)
 
 #Fit models in parallel, with chains running in parallel.----
 
 
 mod.sel.results <- 
-  foreach(s = 1:dim(winter.vars)[1],.combine=rbind, .packages='run.jags',.inorder=FALSE,.errorhandling="remove",.verbose=TRUE) %dopar% {
+  foreach(s = 122:dim(winter.vars)[1],.combine=rbind, .packages='runjags',.inorder=FALSE,.errorhandling="remove",.verbose=TRUE) %dopar% {
     
     
   ##for(s in 1:dim(winter.vars)[1]){   ## the old sequential loop
@@ -102,8 +103,9 @@ mod.sel.results <-
                 z = known.state.cjs(CH),
                 recap.mat=recap.mat,
                 season=season,
+		    winter=ifelse(season==3,1,0),
                 feeding=feeding,
-		            age=age_scale,
+		    age=age_scale,
                 sex=sex,
                 size=size,
                 weight=weight,
@@ -115,7 +117,7 @@ mod.sel.results <-
 # Call JAGS from R
   if(output$size=="none" & output$age== "no" & output$feeding== "no"){
     modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="models/LIOW_CJS_fullyear_noage.jags",
+                         model="models/LIOW_CJS_fullyear_winenv.jags",
                          n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                          method="parallel")
   }
@@ -206,6 +208,7 @@ mod.sel.results <-
 
 output[,5:7]<-modelfit$summary$quantiles[1,c(3,1,5)]
 output[,8:10]<-modelfit$summary$quantiles[2,c(3,1,5)]
+output[,20:22]<-modelfit$summary$quantiles[dim(modelfit$summary$quantiles)[1],c(3,1,5)]
 
 if(output$size %in% c("mass","size")){
   output[,11:13]<-modelfit$summary$quantiles[3,c(3,1,5)]
@@ -245,7 +248,7 @@ mod.sel.results<-mod.sel.results %>%
                      if_else(size=="none",
                              if_else(feeding=="yes",dic_med+2,dic_med),
                              if_else(feeding=="yes",dic_med+4,dic_med+2)))) %>%
-  arrange(DIC)
+  arrange(abs(beta_med))
 
 mod.sel.results
-fwrite(mod.sel.results,"output/LIOW_model_selection_DIC_table.csv")
+fwrite(mod.sel.results,"output/LIOW_model_selection_DIC_table_winenv.csv")
