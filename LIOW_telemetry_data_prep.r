@@ -257,6 +257,28 @@ allcov.new[c(6,9,12,18),27:32]<-0 ### missing snow data in June/July imputed wit
 
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# COMPARE DATA FROM MOGGI AND DWD TO ASSESS HOW SIMILAR THEY ARE
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+testplot<-allcov.new %>% gather(key='OCC', value=value, -ch.year,-variable) %>%
+  mutate(OCC=as.numeric(OCC)) %>%
+  filter(OCC>6) %>%
+  mutate(OCC=OCC-6) %>%
+  filter(OCC<24) %>%
+  rename(year=ch.year) 
+
+allcov %>% gather(key='OCC', value=ORIGvalue, -year,-variable) %>%
+  mutate(OCC=as.numeric(OCC)) %>%
+  filter(!is.na(OCC)) %>%
+  left_join(testplot, by=c("year","variable","OCC")) %>%
+  
+  ggplot(aes(x=ORIGvalue,y=value, colour=year)) +
+  geom_point(size=2) +
+  facet_wrap(~variable)
+
+
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
