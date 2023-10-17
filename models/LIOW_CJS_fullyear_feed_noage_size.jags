@@ -39,7 +39,7 @@ beta.size ~ dnorm(0, 1)                     # Prior for size effect
 #beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 beta.feed ~ dnorm(0, 1)                # Prior for effect of supplementary feeding 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
-beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
+beta.win ~ dunif(-2, 2)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
 
 
