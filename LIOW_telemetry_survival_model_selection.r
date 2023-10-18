@@ -24,7 +24,7 @@ select<-dplyr::select
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD DATA FROM PREPARED ENVIRONMENT FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+#setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 load("data/LIOW_SURV_INPUT.RData")
 
@@ -88,7 +88,7 @@ param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.age","beta.feed"
 # START PARALLEL PROCESSING
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-n.cores <- 8  ## this is to be run on the server
+n.cores <- 24  ## this is to be run on the server
 registerDoParallel(n.cores)
 
 #Fit models in parallel, with chains running in parallel.----
@@ -233,9 +233,8 @@ if(output$feeding== "yes"){
 	}else{output[s,17:19]<-modelfit$summary$quantiles[3,c(3,1,5)]}
 }}
 
-write.csv(output,"LIOW_win_var_selection_DIC_table.csv", append=TRUE)
+#write.csv(output,"LIOW_win_var_selection_DIC_table.csv", append=TRUE)
 
-#return output
 return(output)
 #save.image("output/LIOW_survival_output.RData")
 } ### end loop over all models
