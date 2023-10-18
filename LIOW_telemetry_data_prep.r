@@ -143,8 +143,8 @@ names(allcov)[26:31]<-paste("pf",seq(1:6),sep="")
 
 ### READ IN THE RAW DATA ###
 
-ground_temp<-read.table("data/weather/produkt_eb_stunde_19951004_20221231_04931.txt", header=T, sep=";") %>%
-#ground_temp<-read.table("data/weather/produkt_eb_stunde_19881101_20221231_04349.txt", header=T, sep=";") %>%
+#ground_temp<-read.table("data/weather/produkt_eb_stunde_19951004_20221231_04931.txt", header=T, sep=";") %>%
+ground_temp<-read.table("data/weather/produkt_eb_stunde_19881101_20221231_04349.txt", header=T, sep=";") %>%
   select(STATIONS_ID,MESS_DATUM,V_TE005) %>%
   mutate(Date=ymd_h(MESS_DATUM)) %>%
   mutate(year=year(Date),DAY=yday(Date)) %>%
@@ -159,8 +159,8 @@ ground_temp<-read.table("data/weather/produkt_eb_stunde_19951004_20221231_04931.
   group_by(STATIONS_ID,OCC,year) %>%
   summarise(start=min(DAY),mean.temp.ground.min=mean(min.grd.tmp),day.below.zero.ground=sum(frz.grd)) 
 
-air_temp<-read.table("data/weather/produkt_tu_stunde_19880101_20221231_04931.txt", header=T, sep=";") %>%
-#air_temp<-read.table("data/weather/produkt_tu_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
+#air_temp<-read.table("data/weather/produkt_tu_stunde_19880101_20221231_04931.txt", header=T, sep=";") %>%
+air_temp<-read.table("data/weather/produkt_tu_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
   select(STATIONS_ID,MESS_DATUM,TT_TU) %>%
   mutate(Date=ymd_h(MESS_DATUM)) %>%
   mutate(year=year(Date),DAY=yday(Date)) %>%
@@ -174,8 +174,8 @@ air_temp<-read.table("data/weather/produkt_tu_stunde_19880101_20221231_04931.txt
   group_by(STATIONS_ID,OCC,year) %>%
   summarise(start=min(DAY),mean.temp=mean(mean.air.tmp),mean.temp.min=mean(min.air.tmp),mean.temp.max=max(mean.air.tmp)) 
 
-precip<-read.table("data/weather/produkt_rr_stunde_19951004_20221231_04931.txt", header=T, sep=";") %>%
-#precip<-read.table("data/weather/produkt_rr_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
+#precip<-read.table("data/weather/produkt_rr_stunde_19951004_20221231_04931.txt", header=T, sep=";") %>%
+precip<-read.table("data/weather/produkt_rr_stunde_20040601_20221231_04349.txt", header=T, sep=";") %>%
   select(STATIONS_ID,MESS_DATUM,R1,WRTR) %>%
   mutate(Date=ymd_h(MESS_DATUM),DAY=yday(Date)) %>%
   mutate(year=year(Date)) %>%
@@ -190,8 +190,8 @@ precip<-read.table("data/weather/produkt_rr_stunde_19951004_20221231_04931.txt",
   group_by(STATIONS_ID,OCC,year) %>%
   summarise(start=min(DAY),mean.precip=mean(day_precip), total.precip=sum(day_precip), mean.snow=mean(snow_sum),total.snow=sum(snow_sum))
 
-snow<-read.table("data/weather/produkt_klima_tag_19530101_20221231_04931.txt", header=T, sep=";") %>%
-#snow<-read.table("data/weather/produkt_klima_tag_19871101_20221231_04349.txt", header=T, sep=";") %>%
+#snow<-read.table("data/weather/produkt_klima_tag_19530101_20221231_04931.txt", header=T, sep=";") %>%
+snow<-read.table("data/weather/produkt_klima_tag_19871101_20221231_04349.txt", header=T, sep=";") %>%
   select(STATIONS_ID,MESS_DATUM,SHK_TAG) %>%
   mutate(Date=ymd(MESS_DATUM)) %>%
   mutate(year=year(Date)) %>%
