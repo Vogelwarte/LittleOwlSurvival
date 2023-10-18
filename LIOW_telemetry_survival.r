@@ -42,6 +42,7 @@ library(tidyverse)
 filter<-dplyr::filter
 select<-dplyr::select
 library(MCMCvis)
+library(foreach)
 # library(RMark)
 # library(stringr)
 # library(R2jags)
@@ -54,6 +55,8 @@ library(MCMCvis)
 ### data preparation moved to LIOW_telemetry_data_prep.r
 setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+# renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
+# renv::snapshot()
 load("data/LIOW_SURV_INPUT.RData")
 
 

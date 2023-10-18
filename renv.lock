@@ -73,41 +73,6 @@
       ],
       "Hash": "38082d362d317745fb932e13956dccbb"
     },
-    "R2WinBUGS": {
-      "Package": "R2WinBUGS",
-      "Version": "2.1-21",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "boot",
-        "coda",
-        "graphics",
-        "stats",
-        "utils"
-      ],
-      "Hash": "2cbec2a33f7d007f5507b82eb21bbc01"
-    },
-    "R2jags": {
-      "Package": "R2jags",
-      "Version": "0.7-1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "R2WinBUGS",
-        "abind",
-        "coda",
-        "grDevices",
-        "graphics",
-        "methods",
-        "parallel",
-        "rjags",
-        "stats",
-        "utils"
-      ],
-      "Hash": "c60fd6e7f56556a7631804c8fa9b9180"
-    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -189,18 +154,6 @@
       ],
       "Hash": "929e3524e31287dab487e63018c5dab7"
     },
-    "abind": {
-      "Package": "abind",
-      "Version": "1.4-5",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "methods",
-        "utils"
-      ],
-      "Hash": "4f57884290cc75ab22f4af9e9d4ca862"
-    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.1",
@@ -266,18 +219,6 @@
         "vctrs"
       ],
       "Hash": "40415719b5a479b87949f3aa0aee737c"
-    },
-    "boot": {
-      "Package": "boot",
-      "Version": "1.3-28.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "graphics",
-        "stats"
-      ],
-      "Hash": "9a052fbcbe97a98ceb18dbfd30ebd96e"
     },
     "brio": {
       "Package": "brio",
@@ -406,6 +347,16 @@
         "lattice"
       ],
       "Hash": "24b6d006b8b2343876cf230687546932"
+    },
+    "codetools": {
+      "Package": "codetools",
+      "Version": "0.2-19",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "c089a619a7fae175d149d89164f8c7d8"
     },
     "colorspace": {
       "Package": "colorspace",
@@ -670,6 +621,19 @@
         "tibble"
       ],
       "Hash": "1a0a9a3d5083d0d573c4214576f1e690"
+    },
+    "foreach": {
+      "Package": "foreach",
+      "Version": "1.5.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "codetools",
+        "iterators",
+        "utils"
+      ],
+      "Hash": "618609b42c9406731ead03adf5379850"
     },
     "fs": {
       "Package": "fs",
@@ -954,6 +918,17 @@
         "utils"
       ],
       "Hash": "0080607b4a1a7b28979aecef976d8bc2"
+    },
+    "iterators": {
+      "Package": "iterators",
+      "Version": "1.0.14",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "utils"
+      ],
+      "Hash": "8954069286b4b2b0d023d1b288dce978"
     },
     "jquerylib": {
       "Package": "jquerylib",
@@ -1451,17 +1426,6 @@
         "withr"
       ],
       "Hash": "d66fe009d4c20b7ab1927eb405db9ee2"
-    },
-    "rjags": {
-      "Package": "rjags",
-      "Version": "4-14",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Requirements": [
-        "R",
-        "coda"
-      ],
-      "Hash": "dc00e7bcbec8cd953930ec12fc9c8819"
     },
     "rlang": {
       "Package": "rlang",
