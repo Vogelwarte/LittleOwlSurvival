@@ -71,7 +71,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
 # EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-winter.vars<-expand.grid(var=unique(allcov.new$variable)[c(2,3,4,6)],
+winter.vars<-expand.grid(var=unique(allcov.new$variable)[c(2,6)],
                          feeding=c("yes","no"),
                          size=c("size","mass","none"),
                          age=c("yes","no"),
@@ -95,7 +95,7 @@ registerDoParallel(n.cores)
 
 
 mod.sel.results <- 
-  foreach(s = 1:dim(winter.vars)[1],.combine=rbind, .packages='runjags',.inorder=FALSE,.errorhandling="remove",.verbose=TRUE) %dopar% {
+  foreach(s = 1:dim(winter.vars)[1],.combine=rbind, .packages='runjags',.inorder=FALSE,.errorhandling="remove",.verbose=FALSE) %dopar% {
     
     
   ##for(s in 1:dim(winter.vars)[1]){   ## the old sequential loop
