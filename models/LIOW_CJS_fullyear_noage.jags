@@ -36,7 +36,7 @@ for (y in 1:3) {
 }
 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
-beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
+beta.win ~ dunif(-2, 2)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
 
 

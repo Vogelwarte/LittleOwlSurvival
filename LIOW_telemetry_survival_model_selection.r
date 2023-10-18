@@ -10,6 +10,9 @@
 # updated on 17 OCT 2023 to include parallel processing to work through >100 models in less time
 # parallel computation taken from: https://stackoverflow.com/questions/53597282/running-multiple-parallel-processes-in-parallel-r
 
+# updated on 18 OCT 2023 after chat with Murdy - snow is biologically most sensible variable
+# skip model selection of lots of weather variables, just take the snow and use that
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -21,7 +24,7 @@ select<-dplyr::select
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD DATA FROM PREPARED ENVIRONMENT FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 load("data/LIOW_SURV_INPUT.RData")
 
@@ -53,11 +56,11 @@ cjs.init.z <- function(ch,f){
 
 # MCMC settings
 nt <- 6
-nb <- 20
+nb <- 200
 nc <- 3
 nad<-10
-ns<-200
-ni<-350
+ns<-2000
+ni<-3500
 
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 95, 10),
@@ -68,7 +71,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
 # EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-winter.vars<-expand.grid(var=unique(allcov.new$variable),
+winter.vars<-expand.grid(var=unique(allcov.new$variable)[c(2,3,4,6)],
                          feeding=c("yes","no"),
                          size=c("size","mass","none"),
                          age=c("yes","no"),
@@ -92,7 +95,7 @@ registerDoParallel(n.cores)
 
 
 mod.sel.results <- 
-  foreach(s = 122:dim(winter.vars)[1],.combine=rbind, .packages='runjags',.inorder=FALSE,.errorhandling="remove",.verbose=TRUE) %dopar% {
+  foreach(s = 1:dim(winter.vars)[1],.combine=rbind, .packages='runjags',.inorder=FALSE,.errorhandling="remove",.verbose=TRUE) %dopar% {
     
     
   ##for(s in 1:dim(winter.vars)[1]){   ## the old sequential loop
