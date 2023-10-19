@@ -17,6 +17,7 @@ library(runjags)
 library(tidyverse)
 library(data.table)
 library(foreach)
+library(doParallel)
 filter<-dplyr::filter
 select<-dplyr::select
 

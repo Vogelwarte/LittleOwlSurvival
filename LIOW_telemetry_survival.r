@@ -43,6 +43,7 @@ filter<-dplyr::filter
 select<-dplyr::select
 library(MCMCvis)
 library(foreach)
+library(doParallel)
 # library(RMark)
 # library(stringr)
 # library(R2jags)
