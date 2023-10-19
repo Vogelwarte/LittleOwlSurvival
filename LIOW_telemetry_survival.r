@@ -32,6 +32,8 @@
 ## when including all data the temperature has the most outstanding effect, not snow cover,
 ## therefore need to build model with weather only affecting winter survival
 
+## REVISED 19 OCT 2023 after exhaustive model selection decided on final model
+
 
 library(runjags)
 library(tidyverse)
@@ -58,6 +60,7 @@ setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 # renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
 # renv::snapshot()
+
 load("data/LIOW_SURV_INPUT.RData")
 
 
@@ -69,7 +72,7 @@ load("data/LIOW_SURV_INPUT.RData")
 
 
 # Specify model in JAGS language
-sink("models/LIOW_CJS_fullyear_winenv.jags")
+sink("models/LIOW_CJS_FINAL.jags")
 cat("
 model {
 
@@ -77,7 +80,9 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
-                        beta.yr[year[i]] +
+                        #beta.yr[year[i]] +
+                        beta.mass*weight[i] +
+                        beta.feed*feeding[i] + 
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t]*winter[t] +
                         beta.male*sex[i] +
@@ -107,18 +112,19 @@ tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
 
-for (y in 1:3) {
- beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect 
- #beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
-}
+# for (y in 1:3) {
+#  beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect 
+#  #beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
+# }
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
 #beta.age ~ dnorm(0, 1)                     # Prior for age effect 
-#beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
+beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
-beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
+#beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
+beta.feed ~ dnorm(0, 1)                # Prior for effect of supplementary feeding
 
 
 # Likelihood 
@@ -173,15 +179,16 @@ INPUT <- list(y = CH, f = f,
               z = known.state.cjs(CH),
               recap.mat=recap.mat,
               season=season,
-              winter=ifelse(season==3,1,0),
+              feeding=feeding,
+              #winter=ifelse(season==3,1,0),
               #age=age_scale,
               #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
               #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
               year=as.numeric(year),
-              #weight=weight,
-              env=as.matrix((allcov.new %>% dplyr::filter(variable=="mean.temp.ground.min"))[,c(3:32)]))  ### select any of the winter covariates 
+              weight=weight,
+              env=as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))[,c(3:32)]))  ### select any of the winter covariates 
               #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
@@ -205,7 +212,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          sigma = runif(1, 0, 2))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -217,7 +224,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_winenv.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -226,9 +233,9 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 #                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.male","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_fullyear_null.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -246,14 +253,14 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
 ## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[17,c(3,1,5)] +2 <
-null.model$summary$quantiles[16,c(3,1,5)]
+full.model$summary$quantiles[16,c(3,1,5)] +2 <
+null.model$summary$quantiles[15,c(3,1,5)]
 
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.yr","beta.win","beta.male","beta.p.win","mean.p"))
-MCMCplot(null.model$mcmc, params=c("mean.phi","beta.yr","beta.p.win","beta.male","beta.simpleage","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
+MCMCplot(null.model$mcmc, params=c("mean.phi","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
@@ -264,9 +271,9 @@ MCMCdiag(full.model$mcmc,
          add_field = '6.0',
          add_field_names = 'Data version',
          save_obj = TRUE,
-         obj_name = 'LIOW-fit-16Oct2023',
+         obj_name = 'LIOW-fit-19Oct2023',
          add_obj = list(INPUT, sessionInfo()),
-         add_obj_names = c('surv-data-16Oct2023', 'session-info-16Oct2023'))
+         add_obj_names = c('surv-data-19Oct2023', 'session-info-19Oct2023'))
 
 
 
@@ -362,10 +369,10 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 
 AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
                    age=c(45,98,180,190,200,210,300),
-                   #age=mean(age),
+                   feeding=0,
+                   weight=0,
                    sex=1,
-                   #size=0,
-                   snow=scale(c(0,0,0,3,6,9,0))[,1])  %>% 
+                   snow=scale(c(0,0,0,4,8,12,0))[,1])  %>% 
   #mutate(pf=ifelse(season==1,1,0)) %>%
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) 
 
@@ -380,10 +387,10 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             #as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
-             as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
+             #as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             #as.numeric(MCMCout[s,match("beta.age",parmcols)])*scaleage +
+             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
@@ -406,7 +413,7 @@ plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(snow=c(0,0,0,0,3,6,9)) %>%
+  mutate(snow=c(0,0,0,0,4,8,12)) %>%
   arrange(age)
 
  
@@ -420,8 +427,8 @@ ggplot(plotdat)+
   scale_y_continuous(name="Biweekly survival probability", limits=c(0.7,1), breaks=seq(0.7,1,0.05), labels=seq(0.7,1,0.05)) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
-  scale_colour_manual(name="Days of >5 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
-                      breaks=c(0,3,6,9),labels=c(0,3,6,9)) +
+  scale_colour_manual(name="Days of ≥ 1 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
+                      breaks=c(0,4,8,12),labels=c(0,4,8,12)) +
   
   ## beautification of the axes
   theme(panel.background=element_rect(fill="white", colour="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
@@ -447,63 +454,10 @@ ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival
 # CUMULATIVE ANNUAL SURVIVAL PREDICTION FOR FIRST YEAR LITTLE OWLS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
-# 
-# AnnTab<-data.frame(season=c(1,2,3),
-#                    age=mean(age),
-#                    sex=1,
-#                    snow=-0.791) %>%     
-#   mutate(scaleage=(age-attr(simpleage_scale, 'scaled:center'))/attr(simpleage_scale, 'scaled:scale')) 
-# 
-# Xin<-AnnTab
-# 
-# ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
-# 
-# MCMCpred2<-data.frame()
-# for(s in 1:nrow(MCMCout)) {
-#   
-#   X<-  Xin %>%
-#     
-#     ##CALCULATE MONTHLY SURVIVAL
-#     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-#              as.numeric(MCMCout[s,match("beta.simpleage",parmcols)])*scaleage +
-#              as.numeric(MCMCout[s,match("beta.yr[2]",parmcols)])+   #*year + ### categorical year effect
-#              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-#              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
-#     
-#     ##BACKTRANSFORM TO NORMAL SCALE
-#     mutate(surv=plogis(logit.surv)) %>%
-#     
-#     ##CALCULATE ANNUAL SURVIVAL
-#     mutate(Season=ifelse(season==1,"Dispersal",
-#                          ifelse(season==2,"Winter","Breeding"))) %>%
-#     
-#     mutate(surv=ifelse(season==1,surv^6,
-#                          ifelse(season==2,surv^10,surv^7))) %>%
-#     mutate(simul=s)              
-#   
-#   MCMCpred2<-rbind(MCMCpred2,as.data.frame(X)) 
-#   
-# }
-
-
 stage.surv<-  plotdat %>%
   mutate(dur=c(5,6,10,10,10,10,5)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
-
-### ANNUAL SURVIVAL IN MILD YEAR
-c(prod(stage.surv[c(1:3,7),4]),prod(stage.surv[c(1:3,7),5]),prod(stage.surv[c(1:3,7),6]))
-
-### ANNUAL SURVIVAL IN SEVERE WINTER YEAR
-c(prod(stage.surv[c(1:2,6:7),4]),prod(stage.surv[c(1:2,6:7),5]),prod(stage.surv[c(1:2,6:7),6]))
-
-# ann.surv<- MCMCpred2 %>%
-#   group_by(simul) %>%
-#   summarise(ann.surv=prod(raw.surv)*0.55) %>%
-#   ungroup() %>%
-#   summarise(surv=quantile(ann.surv,0.5),surv.lcl=quantile(ann.surv,0.025),surv.ucl=quantile(ann.surv,0.975))
-# ann.surv
 
 
 Table1<- stage.surv[c(1:3,7),] %>%
@@ -536,126 +490,15 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 # load("LIOW_survival_output.RData")
 
 
+### CALCULATE REDUCTION IN % ###
+
+(0.125-0.102)/0.125
 
 
 
+##### CREATE TABLE S1 FROM MODEL SELECTION RESULTS  ##########
 
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# EXPLORE BEST WINTER SURVIVAL PREDICTOR AND INCLUSION OF AGE AND SIZE - fully revised to final model on 20 Sept
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-### re-run with revised model on 21 Aug
-### re-run with revised model and age, sex, and size variables on 18 Sept 2023
-
-### to extract DIC tried use rjags - did not work any better
-### settled on using simple deviance since number of parameters is constant for winter variables - BUT NOT FOR INCLUSION OF AGE AND SIZE
-# library(rjags)
-
-
-
-############################-----------------------------------------------------------------------################################################################
-#### EXPLORE OTHER VARIABLES #####
-
-#winter.vars<-data.frame(var=unique(allcov$variable),dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0)
-winter.vars<-expand.grid(var=unique(allcov$variable),size=c("size","mass","none"),age=c("yes","no"),dic_med=0, dic_lcl=0,dic_ucl=0,beta_med=0, beta_lcl=0,beta_ucl=0,
-                         beta_size=0, beta_size_lcl=0,beta_size_ucl=0,
-                         beta_age_med=0, beta_age_lcl=0,beta_age_ucl=0)
-param2 <- c("deviance","beta.win","beta.size","beta.mass","beta.simpleage")
-for(s in 1:dim(winter.vars)[1]){
-
-  INPUT <- list(y = CH, f = f,
-                nind = dim(CH)[1],
-                n.occasions = dim(CH)[2],
-                z = known.state.cjs(CH),
-                recap.mat=recap.mat,
-                season=season,
-                simpleage=as.numeric(simpleage_scale),
-                sex=sex,
-                size=size,
-                weight=weight,
-                year=as.numeric(year),
-                env=as.matrix((allcov %>% dplyr::filter(variable==winter.vars$var[s]))[,3:25]))  ### select any of the winter covariates 
-
-# Call JAGS from R
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "no"){
-    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex.jags",
-                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
-  }
-
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "no"){
-    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_size.jags",
-                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
-  }
-  
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "no"){
-    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_weight.jags",
-                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
-  }
-  
-  if(winter.vars$size[s]=="size" & winter.vars$age[s]== "yes"){
-    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_size_age.jags",
-                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
-  }
-  
-  if(winter.vars$size[s]=="mass" & winter.vars$age[s]== "yes"){
-    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_weight_age.jags",
-                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
-  }
-  
-  if(winter.vars$size[s]=="none" & winter.vars$age[s]== "yes"){
-    modelfit <- run.jags(data=INPUT, inits=inits, monitor=param2,
-                         model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_p_var_3stage_sex_age.jags",
-                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                         method = "rjparallel")
-  }
-
-
-# modelJ <- jags.model(data=INPUT, inits=inits,
-#                      file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model.jags",
-#                      n.chains = nc, n.adapt = nad) 
-# modelfit <- jags.samples(model=modelJ, variable.names=param2, n.iter=ns+nb, thin = nt)
-# 
-# dic<-dic.samples(model=modelJ, n.iter=ns+nb, thin = nt,type="pD")
-# out.dic.list[[s]]<-dic
-# 
-# winter.vars$dic[s]<-mean(dic$deviance)
-# winter.vars$dic_min[s]<-min(dic$deviance)
-# winter.vars$dic_max[s]<-max(dic$deviance)
-winter.vars[s,4:6]<-modelfit$summary$quantiles[1,c(3,1,5)]
-winter.vars[s,7:9]<-modelfit$summary$quantiles[2,c(3,1,5)]
-
-if(winter.vars$size[s] %in% c("mass","size")){
-  winter.vars[s,10:12]<-modelfit$summary$quantiles[3,c(3,1,5)]
-}
-if(winter.vars$age[s]== "yes"){
-	if(winter.vars$size[s] %in% c("mass","size")){	
-  	winter.vars[s,13:15]<-modelfit$summary$quantiles[4,c(3,1,5)]
-	}else{winter.vars[s,13:15]<-modelfit$summary$quantiles[3,c(3,1,5)]}
-}
-
-fwrite(winter.vars,"LIOW_win_var_selection_DIC_table_v2.csv")
-save.image("LIOW_survival_output.RData")
-} ### end loop over all models
-
-
-############################-----------------------------------------------------------------------################################################################
-
-
-#winter.vars<-fread("LIOW_win_var_selection_DIC_table_v2.csv")
-winter.vars<-winter.vars %>% 
-  mutate(DIC=if_else(age=="yes",if_else(size=="none",dic_med+2,dic_med+4),if_else(size=="none",dic_med,dic_med+2))) %>%
+winter.vars<-fread("output/LIOW_model_selection_DIC_table_winenv.csv")%>%
   arrange(DIC)
 
 winter.vars
@@ -667,10 +510,12 @@ TABLES1 <- winter.vars %>%
   mutate(winter.effect=sprintf("%s (%s – %s)",round(beta_med,3),round(beta_lcl,3),round(beta_ucl,3))) %>%
   mutate(size.effect=sprintf("%s (%s – %s)",round(beta_size,3),round(beta_size_lcl,3),round(beta_size_ucl,3))) %>%
   mutate(age.effect=sprintf("%s (%s – %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
+  mutate(feed.effect=sprintf("%s (%s – %s)",round(beta_feed,3),round(beta_feed_lcl,3),round(beta_feed_ucl,3))) %>%
   mutate(age.effect=if_else(age=="no","",age.effect)) %>%
+  mutate(feed.effect=if_else(feeding=="no","",age.effect)) %>%
   mutate(size.effect=if_else(size=="none","",size.effect)) %>%
   arrange(DIC) %>%
-  select(var,size,age,DIC,winter.effect,size.effect,age.effect) %>%
+  select(var,size,age,feeding,DIC,winter.effect,size.effect,age.effect,feed.effect) %>%
   rename(Winter.variable=var)
 TABLES1
 fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
