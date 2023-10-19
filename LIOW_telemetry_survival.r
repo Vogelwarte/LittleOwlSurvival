@@ -379,9 +379,10 @@ AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
                    feeding=0,
                    weight=0,
                    sex=1,
-                   snow=scale(c(0,0,0,4,8,12,0))[,1])  %>% 
+                   snow=c(0,0,0,4,8,12,0))  %>% 
   #mutate(pf=ifelse(season==1,1,0)) %>%
-  mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) 
+  mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
+  mutate(scalesnow=(snow-snowmean)/snowsd)
 
 Xin<-AnnTab
 
@@ -398,7 +399,7 @@ for(s in 1:nrow(MCMCout)) {
              #as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
-             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
+             as.numeric(MCMCout[s,match("beta.win",parmcols)])*scalesnow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
     mutate(surv=plogis(logit.surv)) %>%
@@ -431,7 +432,7 @@ ggplot(plotdat)+
   ## format axis ticks
   #scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(3,5,8,10)], labels=plotdat$Season[c(3,5,8,10)]) +
   scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1,2,4,7)], labels=plotdat$Season[c(1,2,4,7)]) +
-  scale_y_continuous(name="Biweekly survival probability", limits=c(0.7,1), breaks=seq(0.7,1,0.05), labels=seq(0.7,1,0.05)) +
+  scale_y_continuous(name="Biweekly survival probability", limits=c(0.5,1), breaks=seq(0.5,1,0.05), labels=seq(0.5,1,0.05)) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
   scale_colour_manual(name="Days of ≥ 1 cm\nsnow cover", values=c("black", "goldenrod", "darkorange", "firebrick"),
@@ -461,30 +462,50 @@ ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival
 # CUMULATIVE ANNUAL SURVIVAL PREDICTION FOR FIRST YEAR LITTLE OWLS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+### simplistic season survival ###
+## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
 stage.surv<-  plotdat %>%
   mutate(dur=c(5,6,10,10,10,10,5)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 
+## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
+## manually assemble winters by assuming that sever stages only occur for a fraction of winter period
+season.surv<-stage.surv
+season.surv[4,4]<-  plotdat$surv[4]^5 * plotdat$surv[3]^5
+season.surv[4,5]<-  plotdat$surv.lcl[4]^5 * plotdat$surv.lcl[3]^5
+season.surv[4,6]<-  plotdat$surv.ucl[4]^5 * plotdat$surv.ucl[3]^5
 
-Table1<- stage.surv[c(1:3,7),] %>%
+season.surv[5,4]<-  plotdat$surv[5]^3 * plotdat$surv[4]^4 * plotdat$surv[3]^3
+season.surv[5,5]<-  plotdat$surv.lcl[5]^3 * plotdat$surv.lcl[4]^4 * plotdat$surv.lcl[3]^3
+season.surv[5,6]<-  plotdat$surv.ucl[5]^3 * plotdat$surv.ucl[4]^4 * plotdat$surv.ucl[3]^3
+
+season.surv[6,4]<-  plotdat$surv[6]^2 * plotdat$surv[5]^3 * plotdat$surv[4]^3 * plotdat$surv[3]^2
+season.surv[6,5]<-  plotdat$surv.lcl[6]^2 * plotdat$surv.lcl[5]^3 * plotdat$surv.lcl[4]^3 * plotdat$surv.lcl[3]^2
+season.surv[6,6]<-  plotdat$surv.ucl[6]^2 * plotdat$surv.ucl[5]^3 * plotdat$surv.ucl[4]^3 * plotdat$surv.ucl[3]^2
+
+season.surv
+
+
+
+Table1<- season.surv[c(1:3,7),] %>%
   mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   mutate(Duration=dur*2) %>%
   select(Season,Duration,mild.survival) %>%
   bind_rows(data.frame(Season="Annual",Duration=52,
                        mild.survival=sprintf("%s (%s - %s)",
-                                        round(prod(stage.surv[c(1:3,7),4]),3),
-                                        round(prod(stage.surv[c(1:3,7),5]),3),
-                                        round(prod(stage.surv[c(1:3,7),6]),3))))
+                                        round(prod(season.surv[c(1:3,7),4]),3),
+                                        round(prod(season.surv[c(1:3,7),5]),3),
+                                        round(prod(season.surv[c(1:3,7),6]),3))))
 
-Table1<- stage.surv[c(1:2,6:7),] %>%
+Table1<- season.surv[c(1:2,6:7),] %>%
   mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   select(Season,harsh.survival) %>%
   bind_rows(data.frame(Season="Annual",
                        harsh.survival=sprintf("%s (%s - %s)",
-                                        round(prod(stage.surv[c(1:2,6:7),4]),3),
-                                        round(prod(stage.surv[c(1:2,6:7),5]),3),
-                                        round(prod(stage.surv[c(1:2,6:7),6]),3))))  %>%
+                                        round(prod(season.surv[c(1:2,6:7),4]),3),
+                                        round(prod(season.surv[c(1:2,6:7),5]),3),
+                                        round(prod(season.surv[c(1:2,6:7),6]),3))))  %>%
   left_join(Table1, by="Season") %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
@@ -499,7 +520,7 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 
 ### CALCULATE REDUCTION IN % ###
 
-(0.125-0.102)/0.125
+(0.106-0.049)/0.106
 
 
 
