@@ -173,6 +173,13 @@ known.state.cjs <- function(ch){
   return(state)
 }
 
+
+### ENSURE REPEATABLE SCALING OF SNOWMAT ##
+snowmean<-mean(as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))[,c(3:32)]))
+snowsd<-sd(as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))[,c(3:32)]))
+snowmat<-(as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))[,c(3:32)])-snowmean)/snowsd
+
+### ENSURE REPEATABLE SCALING OF SNOWMAT ##
 INPUT <- list(y = CH, f = f,
               nind = dim(CH)[1],
               n.occasions = dim(CH)[2],
@@ -188,7 +195,7 @@ INPUT <- list(y = CH, f = f,
               #size=size,
               year=as.numeric(year),
               weight=weight,
-              env=as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))[,c(3:32)]))  ### select any of the winter covariates 
+              env=snowmat)  ### select any of the winter covariates 
               #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
 
