@@ -230,8 +230,8 @@ if(output$feeding== "yes"){
 	}else{output[,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]}
  }else{
 	if(output$size %in% c("mass","size")){	
-  	output[s,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]
-	}else{output[s,17:19]<-modelfit$summary$quantiles[3,c(3,1,5)]}
+  	output[,17:19]<-modelfit$summary$quantiles[4,c(3,1,5)]
+	}else{output[,17:19]<-modelfit$summary$quantiles[3,c(3,1,5)]}
 }}
 
 #write.csv(output,"LIOW_win_var_selection_DIC_table.csv", append=TRUE)
