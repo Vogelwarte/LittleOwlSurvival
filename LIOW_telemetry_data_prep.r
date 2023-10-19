@@ -228,7 +228,7 @@ weather.cov.matrix<-
   filter(ch.year>2008) %>%
   spread(key=variable, value=value) %>%
   arrange(ch.year,ch.occ)
-  
+summary(weather.cov.matrix)  
 
 ### CREATE A MATRIX SIMILAR TO ALLCOV ABOVE BUT WITH ACTUAL DATA
 
@@ -236,7 +236,7 @@ allcov.new<-weather.cov.matrix %>%
   select(-STATIONS_ID,-OCC,-year,-start,-ch.occ.prel) %>%
   gather(key="variable", value="value",-ch.occ,-ch.year) %>%
   group_by(variable) %>%
-  mutate(value=scale(value,center=F)[,1]) %>%   ## scale all variables for better estimation
+  #mutate(value=scale(value,center=F)[,1]) %>%   ## scale all variables for better estimation - removed to facilitate easier backtransformation
   ungroup() %>%
   spread(key=ch.occ, value=value) %>%
   arrange(variable,ch.year)
