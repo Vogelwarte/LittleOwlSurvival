@@ -531,7 +531,7 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 winter.vars<-fread("output/LIOW_model_selection_DIC_table_winenv.csv")%>%
   arrange(DIC)
 
-winter.vars
+winter.vars %>% filter(feeding=="yes")
 
 
 ## create TABLE S1
@@ -542,7 +542,7 @@ TABLES1 <- winter.vars %>%
   mutate(age.effect=sprintf("%s (%s – %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
   mutate(feed.effect=sprintf("%s (%s – %s)",round(beta_feed,3),round(beta_feed_lcl,3),round(beta_feed_ucl,3))) %>%
   mutate(age.effect=if_else(age=="no","",age.effect)) %>%
-  mutate(feed.effect=if_else(feeding=="no","",age.effect)) %>%
+  mutate(feed.effect=if_else(feeding=="no","",feed.effect)) %>%
   mutate(size.effect=if_else(size=="none","",size.effect)) %>%
   arrange(DIC) %>%
   select(var,size,age,feeding,DIC,winter.effect,size.effect,age.effect,feed.effect) %>%
