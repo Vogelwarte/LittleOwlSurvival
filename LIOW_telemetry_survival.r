@@ -24,6 +24,7 @@
 
 
 ## REVISED 19 SEPT 2023: need to include age as offset (single value) and sex (Tschumi et al. 2019)
+## Age was solved by having staggered entry into capture history after including post-fledging data
 
 ## REVISED 27 SEPT 2023: trying to include post-fledging data and re-instate age (data from Perrig et al. 2017)
 ## added creation of R env file for outsourcing the model selection
@@ -268,6 +269,7 @@ null.model$summary$quantiles[15,c(3,1,5)]
 #### MODEL ASSESSMENT ####
 MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
+MCMCtrace(full.model$mcmc)
 MCMCsummary(full.model$mcmc)
 MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
