@@ -375,14 +375,18 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 # str(MCMCout)
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
-
-AnnTab<-data.frame(season=c(1,2,3,3,3,3,4),
+AnnTab<-expand.grid(season=c(1,2,3,3,3,3,4),
                    age=c(45,98,180,190,200,210,300),
-                   feeding=0,
-                   weight=0,
-                   sex=1,
+                   feeding=c(0,1),
+                   weight=c(-1,0,1),
+                   sex=c(0,1),
                    snow=c(0,0,0,4,8,12,0))  %>% 
-  #mutate(pf=ifelse(season==1,1,0)) %>%
+AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
+                   age=c(45,98,180,190,200,210,300),
+                   snow=c(0,0,0,4,8,12,0)),
+                   feeding=c(0,1),
+                   weight=c(-1,0,1),
+                   sex=c(0,1)) %>%
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
   mutate(scalesnow=(snow-snowmean)/snowsd)
 
@@ -419,6 +423,9 @@ for(s in 1:nrow(MCMCout)) {
 ### CREATE PLOT
 
 plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
+  filter(sex==0) %>%
+  filter(weight==0) %>%
+  filter(feeding==0) %>%
   mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
@@ -515,6 +522,51 @@ Table1
 fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 
 
+
+
+#### perform same calculation but for all groups
+
+MCMCpred %>% rename(raw.surv=surv) %>%
+  group_by(Season,snow,sex,weight,feeding) %>%
+  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  mutate(dur=c(5,6,10,10,10,10,5)) %>%
+  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
+stage.surv
+
+## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
+## manually assemble winters by assuming that sever stages only occur for a fraction of winter period
+season.surv<-stage.surv
+
+season.surv[6,4]<-  plotdat$surv[6]^2 * plotdat$surv[5]^3 * plotdat$surv[4]^3 * plotdat$surv[3]^2
+season.surv[6,5]<-  plotdat$surv.lcl[6]^2 * plotdat$surv.lcl[5]^3 * plotdat$surv.lcl[4]^3 * plotdat$surv.lcl[3]^2
+season.surv[6,6]<-  plotdat$surv.ucl[6]^2 * plotdat$surv.ucl[5]^3 * plotdat$surv.ucl[4]^3 * plotdat$surv.ucl[3]^2
+
+season.surv
+
+
+
+TableS2<- season.surv[c(1:3,7),] %>%
+  mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+  mutate(Duration=dur*2) %>%
+  select(Season,Duration,mild.survival) %>%
+  bind_rows(data.frame(Season="Annual",Duration=52,
+                       mild.survival=sprintf("%s (%s - %s)",
+                                             round(prod(season.surv[c(1:3,7),4]),3),
+                                             round(prod(season.surv[c(1:3,7),5]),3),
+                                             round(prod(season.surv[c(1:3,7),6]),3))))
+
+TableS2<- season.surv[c(1:2,6:7),] %>%
+  mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+  select(Season,harsh.survival) %>%
+  bind_rows(data.frame(Season="Annual",
+                       harsh.survival=sprintf("%s (%s - %s)",
+                                              round(prod(season.surv[c(1:2,6:7),4]),3),
+                                              round(prod(season.surv[c(1:2,6:7),5]),3),
+                                              round(prod(season.surv[c(1:2,6:7),6]),3))))  %>%
+  left_join(TableS2, by="Season") %>%
+  select(Season,Duration,mild.survival,harsh.survival)
+
+TableS2
   
 # save.image("LIOW_survival_output.RData")
 # load("LIOW_survival_output.RData")
