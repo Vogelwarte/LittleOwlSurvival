@@ -530,47 +530,57 @@ fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlS
 #### perform same calculation but for all groups
 mild.season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   filter(snow==0) %>%  ## only retain mild winters
-  group_by(Season,sex,weight,feeding) %>%
+  group_by(season,Season,sex,weight,feeding) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
-  mutate(dur=c(5,6,10,5)) %>%
+  ungroup() %>%
+  mutate(dur=rep(c(5,6,10,5), each=12)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
-stage.surv
+mild.season.surv
 
-## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
-## manually assemble winters by assuming that sever stages only occur for a fraction of winter period
-season.surv<-stage.surv
+harsh.winter.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  filter(Season=="Winter") %>%  ## only retain winters
+  group_by(season,Season,snow,sex,weight,feeding) %>%
+  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  ungroup() %>%
+  mutate(dur=rep(c(2,3,3,2), each=12)) %>%
+  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur) %>%
+  group_by(season,Season,sex,weight,feeding) %>%
+  summarise(surv=prod(surv),surv.lcl=prod(surv.lcl),surv.ucl=prod(surv.ucl))
+harsh.winter.surv
 
-season.surv[6,4]<-  plotdat$surv[6]^2 * plotdat$surv[5]^3 * plotdat$surv[4]^3 * plotdat$surv[3]^2
-season.surv[6,5]<-  plotdat$surv.lcl[6]^2 * plotdat$surv.lcl[5]^3 * plotdat$surv.lcl[4]^3 * plotdat$surv.lcl[3]^2
-season.surv[6,6]<-  plotdat$surv.ucl[6]^2 * plotdat$surv.ucl[5]^3 * plotdat$surv.ucl[4]^3 * plotdat$surv.ucl[3]^2
 
-season.surv
+### aggregate into a sensible table
 
 
-
-TableS2<- season.surv[c(1:3,7),] %>%
+TableS2<- mild.season.surv %>%
   mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
-  mutate(Duration=dur*2) %>%
-  select(Season,Duration,mild.survival) %>%
-  bind_rows(data.frame(Season="Annual",Duration=52,
-                       mild.survival=sprintf("%s (%s - %s)",
-                                             round(prod(season.surv[c(1:3,7),4]),3),
-                                             round(prod(season.surv[c(1:3,7),5]),3),
-                                             round(prod(season.surv[c(1:3,7),6]),3))))
+  mutate(Sex=ifelse(sex==0,"Female","Male")) %>%
+  mutate(Supplemented=ifelse(feeding==1,"Yes","No")) %>%
+  mutate(Mass=ifelse(weight==-1,"light",ifelse(weight==0,"average","heavy"))) %>%
+  arrange(Supplemented,Sex,weight,season) %>%
+  select(Supplemented,Sex,Mass,Season,weight,season,mild.survival)
 
-TableS2<- season.surv[c(1:2,6:7),] %>%
+
+TableS2<- harsh.winter.surv %>%
   mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
-  select(Season,harsh.survival) %>%
-  bind_rows(data.frame(Season="Annual",
-                       harsh.survival=sprintf("%s (%s - %s)",
-                                              round(prod(season.surv[c(1:2,6:7),4]),3),
-                                              round(prod(season.surv[c(1:2,6:7),5]),3),
-                                              round(prod(season.surv[c(1:2,6:7),6]),3))))  %>%
-  left_join(TableS2, by="Season") %>%
-  select(Season,Duration,mild.survival,harsh.survival)
+  mutate(Sex=ifelse(sex==0,"Female","Male")) %>%
+  mutate(Supplemented=ifelse(feeding==1,"Yes","No")) %>%
+  mutate(Mass=ifelse(weight==-1,"light",ifelse(weight==0,"average","heavy"))) %>%
+  arrange(Supplemented,Sex,weight) %>%
+  ungroup() %>%
+  select(Supplemented,Sex,Mass,Season,weight,season,harsh.survival) %>%
+  bind_rows(TableS2 %>% filter(Season!="Winter") %>% rename(harsh.survival=mild.survival)) %>%
+  arrange(Supplemented,Sex,weight,season) %>%
+  select(Supplemented,Sex,Mass,Season,harsh.survival) %>%
+  left_join(TableS2 %>% select(Supplemented,Sex,Mass,Season,mild.survival), by=c('Supplemented','Sex','Mass','Season'))  %>%
+  select(Supplemented,Sex,Mass,Season,mild.survival,harsh.survival)
 
 TableS2
-  
+fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
+
+
+
+
 # save.image("LIOW_survival_output.RData")
 # load("LIOW_survival_output.RData")
 
