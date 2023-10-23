@@ -375,12 +375,12 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 # str(MCMCout)
 
 ### SET UP TABLE FOR PLOTTING THE SEASONAL SURVIVAL GRAPH
-AnnTab<-expand.grid(season=c(1,2,3,3,3,3,4),
-                   age=c(45,98,180,190,200,210,300),
-                   feeding=c(0,1),
-                   weight=c(-1,0,1),
-                   sex=c(0,1),
-                   snow=c(0,0,0,4,8,12,0))  %>% 
+# AnnTab<-expand.grid(season=c(1,2,3,3,3,3,4),
+#                    age=c(45,98,180,190,200,210,300),
+#                    feeding=c(0,1),
+#                    weight=c(-1,0,1),
+#                    sex=c(0,1),
+#                    snow=c(0,0,0,4,8,12,0))  %>% 
 AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
                    age=c(45,98,180,190,200,210,300),
                    snow=c(0,0,0,4,8,12,0)),
@@ -521,15 +521,18 @@ Table1<- season.surv[c(1:2,6:7),] %>%
 Table1
 fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 
+### calculate what extreme winter represents in terms of snow cover
+(24+24+12)/140
+
 
 
 
 #### perform same calculation but for all groups
-
-MCMCpred %>% rename(raw.surv=surv) %>%
-  group_by(Season,snow,sex,weight,feeding) %>%
+mild.season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  filter(snow==0) %>%  ## only retain mild winters
+  group_by(Season,sex,weight,feeding) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
-  mutate(dur=c(5,6,10,10,10,10,5)) %>%
+  mutate(dur=c(5,6,10,5)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 
