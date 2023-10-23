@@ -576,7 +576,7 @@ TableS2<- harsh.winter.surv %>%
   select(Supplemented,Sex,Mass,Season,mild.survival,harsh.survival)
 
 TableS2
-fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
+fwrite(TableS2,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
 
 
 
