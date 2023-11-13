@@ -232,7 +232,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -243,7 +243,7 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 parameters <- c("mu","mean.phi", "mean.p", "beta.male","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -614,6 +614,129 @@ TABLES1 <- winter.vars %>%
   rename(Winter.variable=var)
 TABLES1
 fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
+
+
+
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ESTIMATE ANNUAL SURVIVAL FOR OUR SAMPLE OF BIRDS FIRST YEAR LITTLE OWLS
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### EXTRACT BASIC INDIVIDUAL COVARIATES PER BIRD
+LIOWbase<- LIOW %>% select(bird_id,Male,residual.weight,year,feeding) %>%
+  rename(weight=residual.weight) %>%
+  mutate(feeding=ifelse(feeding=="Unfed",0,1)) %>%
+  mutate(year=as.numeric(year)-2008)
+
+### CONVERT SNOW MATRIX INTO VERTICAL TABLE
+dim(snowmat)
+snowpred<- as_tibble(snowmat) %>% gather(key="occ", value="snow") %>%
+  mutate(year=rep(c(1,2,3), 30)) %>%
+  mutate(season=rep(c(rep(1,6),rep(2,6),rep(3,10),rep(4,8)),each=3)) %>%
+  mutate(occ=as.numeric(occ)) %>%
+  filter(occ<27) %>%
+  arrange(year,occ)
+snowpred
+
+### REPLICATE BASIC INDIVIDUAL COVARIATES FOR 26 FORTNIGHTS
+AnnTab<-LIOWbase %>% slice(rep(row_number(), 26)) %>%
+  mutate(occ=rep(c(1:26), each=dim(LIOW)[1])) %>%
+  left_join(snowpred, b=c('year','occ'))
+
+### check that it looks alright
+AnnTab %>% filter(bird_id=="2010RW051.3")
+
+
+Xin<-AnnTab
+
+### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
+
+MCMCpred<-data.frame()
+for(s in 1:nrow(MCMCout)) {
+  
+  X<-  Xin %>%
+    
+    ##CALCULATE MONTHLY SURVIVAL
+    mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
+             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
+             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
+    
+    ## BACKTRANSFORM TO NORMAL SCALE
+    mutate(surv=plogis(logit.surv)) %>%
+    
+    ## RENAME THE SEASONS
+    mutate(Season=ifelse(season==2,"Autumn",
+                         ifelse(season==3,"Winter",
+                                ifelse(season==4,"Spring","Summer")))) %>%
+    mutate(simul=s)              
+  
+  MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
+  
+}
+
+
+
+
+
+
+Table1<- season.surv[c(1:3,7),] %>%
+  mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+  mutate(Duration=dur*2) %>%
+  select(Season,Duration,mild.survival) %>%
+  bind_rows(data.frame(Season="Annual",Duration=52,
+                       mild.survival=sprintf("%s (%s - %s)",
+                                             round(prod(season.surv[c(1:3,7),4]),3),
+                                             round(prod(season.surv[c(1:3,7),5]),3),
+                                             round(prod(season.surv[c(1:3,7),6]),3))))
+
+Table1<- season.surv[c(1:2,6:7),] %>%
+  mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
+  select(Season,harsh.survival) %>%
+  bind_rows(data.frame(Season="Annual",
+                       harsh.survival=sprintf("%s (%s - %s)",
+                                              round(prod(season.surv[c(1:2,6:7),4]),3),
+                                              round(prod(season.surv[c(1:2,6:7),5]),3),
+                                              round(prod(season.surv[c(1:2,6:7),6]),3))))  %>%
+  left_join(Table1, by="Season") %>%
+  select(Season,Duration,mild.survival,harsh.survival)
+
+Table1
+fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
+
+### calculate what extreme winter represents in terms of snow cover
+(24+24+12)/140
+
+
+
+
+#### perform same calculation but for all groups
+mild.season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  filter(snow==0) %>%  ## only retain mild winters
+  group_by(season,Season,sex,weight,feeding) %>%
+  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  ungroup() %>%
+  mutate(dur=rep(c(5,6,10,5), each=12)) %>%
+  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
+mild.season.surv
+
+harsh.winter.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  filter(Season=="Winter") %>%  ## only retain winters
+  group_by(season,Season,snow,sex,weight,feeding) %>%
+  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  ungroup() %>%
+  mutate(dur=rep(c(2,3,3,2), each=12)) %>%
+  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur) %>%
+  group_by(season,Season,sex,weight,feeding) %>%
+  summarise(surv=prod(surv),surv.lcl=prod(surv.lcl),surv.ucl=prod(surv.ucl))
+harsh.winter.surv
+
+
+
 
 
 
