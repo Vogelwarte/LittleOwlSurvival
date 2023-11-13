@@ -57,8 +57,8 @@ library(doParallel)
 # LOAD DATA FROM PREPARED WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
-#setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
+#setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 # renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
 # renv::snapshot()
 
@@ -232,18 +232,18 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
 ## fitted in R2jags to retrieve sims.list for GoF test - later abandoned
 # full.model <- R2jags::jags(data=INPUT, inits=inits, parameters.to.save=parameters,
-#                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
+#                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
 #                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
 
 parameters <- c("mu","mean.phi", "mean.p", "beta.male","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -275,7 +275,7 @@ MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
          round = 3,
          file_name = 'LIOW_survival',
-         dir = 'C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/output',
+         dir = 'C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output',
          mkdir = 'LIOW_v6',
          add_field = '6.0',
          add_field_names = 'Data version',
@@ -461,8 +461,8 @@ ggplot(plotdat)+
         strip.background=element_rect(fill="white", colour="black"))
 
 
-ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
-ggsave("C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
+ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
+ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 
 
 
@@ -576,7 +576,7 @@ TableS2<- harsh.winter.surv %>%
   select(Supplemented,Sex,Mass,Season,mild.survival,harsh.survival)
 
 TableS2
-fwrite(TableS2,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
+fwrite(TableS2,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
 
 
 
@@ -613,7 +613,7 @@ TABLES1 <- winter.vars %>%
   select(var,size,age,feeding,DIC,winter.effect,size.effect,age.effect,feed.effect) %>%
   rename(Winter.variable=var)
 TABLES1
-fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
+fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
 
 
 
@@ -680,60 +680,15 @@ for(s in 1:nrow(MCMCout)) {
 }
 
 
-
-
-
-
-Table1<- season.surv[c(1:3,7),] %>%
-  mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
-  mutate(Duration=dur*2) %>%
-  select(Season,Duration,mild.survival) %>%
-  bind_rows(data.frame(Season="Annual",Duration=52,
-                       mild.survival=sprintf("%s (%s - %s)",
-                                             round(prod(season.surv[c(1:3,7),4]),3),
-                                             round(prod(season.surv[c(1:3,7),5]),3),
-                                             round(prod(season.surv[c(1:3,7),6]),3))))
-
-Table1<- season.surv[c(1:2,6:7),] %>%
-  mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
-  select(Season,harsh.survival) %>%
-  bind_rows(data.frame(Season="Annual",
-                       harsh.survival=sprintf("%s (%s - %s)",
-                                              round(prod(season.surv[c(1:2,6:7),4]),3),
-                                              round(prod(season.surv[c(1:2,6:7),5]),3),
-                                              round(prod(season.surv[c(1:2,6:7),6]),3))))  %>%
-  left_join(Table1, by="Season") %>%
-  select(Season,Duration,mild.survival,harsh.survival)
-
-Table1
-fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
-
-### calculate what extreme winter represents in terms of snow cover
-(24+24+12)/140
-
-
-
-
-#### perform same calculation but for all groups
-mild.season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
-  filter(snow==0) %>%  ## only retain mild winters
-  group_by(season,Season,sex,weight,feeding) %>%
+#### SUMMARISE THE ANNUAL SURVIVAL OF INDIVIDUALS ##########
+### need to first take median from MCMC samples and then multiply over fortnights
+season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  group_by(bird_id,occ,Season,Male,weight,feeding) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(dur=rep(c(5,6,10,5), each=12)) %>%
-  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
-mild.season.surv
-
-harsh.winter.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
-  filter(Season=="Winter") %>%  ## only retain winters
-  group_by(season,Season,snow,sex,weight,feeding) %>%
-  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
-  ungroup() %>%
-  mutate(dur=rep(c(2,3,3,2), each=12)) %>%
-  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur) %>%
-  group_by(season,Season,sex,weight,feeding) %>%
+  group_by(bird_id,Male,Season,weight,feeding) %>%
   summarise(surv=prod(surv),surv.lcl=prod(surv.lcl),surv.ucl=prod(surv.ucl))
-harsh.winter.surv
+season.surv
 
 
 
