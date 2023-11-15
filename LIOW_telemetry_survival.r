@@ -714,6 +714,10 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   summarise(surv=mean(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
 
 
+### compare to actual survival
+
+sum(apply(CH[,c(27:30)],1,max)) / dim(CH)[1]
+
 
 ##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
 ########### extract actual survival of individuals and plot correlation
@@ -728,9 +732,10 @@ LIOW %>% select(bird_id,ch) %>%
   mutate(obs.surv=sapply(strsplit(ch, ''), function(x) sum(as.numeric(x)))) %>%
   
   
-  ggplot() +
-  geom_errorbar(aes(x=obs.surv, ymin=surv.lcl, ymax=surv.ucl, colour=factor(year)), width=0.2) +   ##, type=Origin
-  geom_point(aes(x=obs.surv, y=surv,colour=factor(year)),size=1, position=position_jitter(width=0.3))+     ## , linetype=Origin
+  ggplot(aes(x=obs.surv, y=surv,ymin=surv.lcl, ymax=surv.ucl, colour=factor(year))) +
+  geom_pointrange(aes(x=obs.surv, y=surv,ymin=surv.lcl, ymax=surv.ucl, colour=factor(year)), 
+                  position=position_jitter(width=0.5), linetype='solid') +
+  #geom_smooth(method='lm') +
   
   ## format axis ticks
   scale_x_continuous(name="Observed survival (n fortnights)", limits=c(0,30), breaks=seq(0,30,5)) +
