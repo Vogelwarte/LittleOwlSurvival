@@ -84,7 +84,7 @@ for (i in 1:nind){
                         beta.mass*weight[i] +
                         beta.feed*feeding[i] + 
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
-                        beta.win*env[year[i],t]*winter[t] +
+                        beta.win*env[year[i],t] +
                         beta.male*sex[i] +
                         epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
@@ -122,8 +122,8 @@ tau.p <- pow(sigma.p, -2)
 beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
 #beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
-beta.win ~ dunif(-2, 0)                     # Prior for winter weather effect, which we know is negative
-#beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
+beta.win ~ dunif(-2, 2)                     # Prior for winter weather effect, which we know is negative
+beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
 beta.feed ~ dnorm(0, 1)                # Prior for effect of supplementary feeding
 
 
@@ -194,7 +194,7 @@ INPUT <- list(y = CH, f = f,
               sex=sex,
               #size=size,
               year=as.numeric(year),
-              weight=weight_scale,
+              weight=as.numeric(weight_scale),
               env=snowmat)  ### select any of the winter covariates 
               #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
@@ -384,8 +384,9 @@ AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
                    age=c(45,98,180,190,200,210,300),
                    snow=c(0,0,0,4,8,12,0)),
                    feeding=c(0,1),
-                   weight=c(-35,0,45),
+                   weight=c(-45,0,35),  ## summary(weight)
                    sex=c(0,1)) %>%
+  mutate(scaleweight=(weight-attr(weight_scale, 'scaled:scale'))/attr(weight_scale, 'scaled:scale')) %>% 
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
   mutate(scalesnow=(snow-snowmean)/snowsd)
 
@@ -400,7 +401,7 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight +
              #as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
@@ -477,7 +478,7 @@ stage.surv<-  plotdat %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 
-## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
+## ALTERNATIVE MORE REALISTIC SCENARIO
 ## manually assemble winters by assuming that sever stages only occur for a fraction of winter period
 season.surv<-stage.surv
 season.surv[4,4]<-  plotdat$surv[4]^5 * plotdat$surv[3]^5
@@ -555,7 +556,7 @@ TableS2<- mild.season.surv %>%
   mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   mutate(Sex=ifelse(sex==0,"Female","Male")) %>%
   mutate(Supplemented=ifelse(feeding==1,"Yes","No")) %>%
-  mutate(Mass=ifelse(weight==-1,"light",ifelse(weight==0,"average","heavy"))) %>%
+  mutate(Mass=ifelse(weight<-1,"light",ifelse(weight==0,"average","heavy"))) %>%
   arrange(Supplemented,Sex,weight,season) %>%
   select(Supplemented,Sex,Mass,Season,weight,season,mild.survival)
 
@@ -564,7 +565,7 @@ TableS2<- harsh.winter.surv %>%
   mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   mutate(Sex=ifelse(sex==0,"Female","Male")) %>%
   mutate(Supplemented=ifelse(feeding==1,"Yes","No")) %>%
-  mutate(Mass=ifelse(weight==-1,"light",ifelse(weight==0,"average","heavy"))) %>%
+  mutate(Mass=ifelse(weight<-1,"light",ifelse(weight==0,"average","heavy"))) %>%
   arrange(Supplemented,Sex,weight) %>%
   ungroup() %>%
   select(Supplemented,Sex,Mass,Season,weight,season,harsh.survival) %>%
