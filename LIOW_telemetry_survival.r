@@ -35,7 +35,6 @@
 
 ## REVISED 19 OCT 2023 after exhaustive model selection decided on final model
 
-
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -232,7 +231,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -243,7 +242,7 @@ full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 
 parameters <- c("mu","mean.phi", "mean.p", "beta.male","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
 null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -519,7 +518,7 @@ Table1<- season.surv[c(1:2,6:7),] %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
 Table1
-fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
+#fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 
 ### calculate what extreme winter represents in terms of snow cover
 (24+24+12)/140
@@ -625,6 +624,8 @@ fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCR
 # ESTIMATE ANNUAL SURVIVAL FOR OUR SAMPLE OF BIRDS FIRST YEAR LITTLE OWLS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+### VALIDATE PREDICTIONS AGAINST ACTUAL SURVIVAL
+
 ### EXTRACT BASIC INDIVIDUAL COVARIATES PER BIRD
 LIOWbase<- LIOW %>% select(bird_id,Male,residual.weight,year,feeding) %>%
   rename(weight=residual.weight) %>%
@@ -650,14 +651,17 @@ AnnTab<-LIOWbase %>% slice(rep(row_number(), 26)) %>%
 AnnTab %>% filter(bird_id=="2010RW051.3")
 
 
-Xin<-AnnTab
+### reduce workspace size
+rm(modelfit,MCMCpred)
+gc()
+
 
 ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
 
 MCMCpred<-data.frame()
 for(s in 1:nrow(MCMCout)) {
   
-  X<-  Xin %>%
+  X<-  AnnTab %>%
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
@@ -683,21 +687,47 @@ for(s in 1:nrow(MCMCout)) {
 #### SUMMARISE THE ANNUAL SURVIVAL OF INDIVIDUALS ##########
 ### need to first take median from MCMC samples and then multiply over fortnights
 season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
-  group_by(bird_id,occ,Season,Male,weight,feeding) %>%
-  summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  group_by(bird_id,simul,Season,Male,weight,feeding) %>%
+  summarise(surv=prod(raw.surv)) %>%
   ungroup() %>%
   group_by(bird_id,Male,Season,weight,feeding) %>%
-  summarise(surv=prod(surv),surv.lcl=prod(surv.lcl),surv.ucl=prod(surv.ucl))
+  summarise(surv=quantile(surv,0.5),surv.lcl=quantile(surv,0.025),surv.ucl=quantile(surv,0.975))
 season.surv
 
+### calculate predicted annual survival for each individual
+
+pred.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  group_by(bird_id,simul,Male,weight,feeding) %>%
+  summarise(sim.surv=prod(raw.surv)) %>%
+  ungroup() %>%
+  group_by(bird_id,Male,weight,feeding) %>%
+  summarise(surv=quantile(sim.surv,0.5),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
+    
+
+### summarise across all individuals
+
+mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
+  group_by(bird_id,year,simul) %>%
+  summarise(sim.surv=prod(raw.surv)) %>%
+  ungroup() %>%
+  group_by(year) %>%
+  summarise(surv=mean(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
+
+
+
+##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
+########### extract actual survival of individuals and plot correlation
+##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
+
+### plot actual N months of survival on x-axis against predicted surv on y-axis
+head(LIOW)
 
 
 
 
-
-
-
-
+##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
+########### abandoned code #############################################################################
+##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
 
 #### MODEL SELECTION VIA DIC ####
 ## follow post by Bob O'Hara
