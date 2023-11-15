@@ -194,7 +194,7 @@ INPUT <- list(y = CH, f = f,
               sex=sex,
               #size=size,
               year=as.numeric(year),
-              weight=weight,
+              weight=weight_scale,
               env=snowmat)  ### select any of the winter covariates 
               #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
               #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
@@ -384,7 +384,7 @@ AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
                    age=c(45,98,180,190,200,210,300),
                    snow=c(0,0,0,4,8,12,0)),
                    feeding=c(0,1),
-                   weight=c(-1,0,1),
+                   weight=c(-35,0,45),
                    sex=c(0,1)) %>%
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
   mutate(scalesnow=(snow-snowmean)/snowsd)
