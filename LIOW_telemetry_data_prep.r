@@ -33,7 +33,7 @@ library(readxl)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # READ IN RAW DATA FROM EXCEL FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 
 dat2009<-read_excel("data/EH Master_juveniles_Moggi.xlsx",sheet="EH 2009 daily") %>%
@@ -291,7 +291,7 @@ allcov %>% gather(key='OCC', value=ORIGvalue, -year,-variable) %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD DATA FROM MARK INP DATA FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
+setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 
 LIOWch<-convert.inp(inp.filename='data/1st year.inp',
@@ -395,7 +395,9 @@ for(col in 8:N.occ){
 age_scale<-scale(agemat,center=F)  ## to prevent column-specific centering we need to set center=F
 simpleage_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
 weight <- LIOW[,5] # residual weight (seems to be standardized already)
+weight_scale <- scale(LIOW[,5]) # scaled residual weight corrected for age at weighing and growth curve
 size <- LIOW[,6] # residual tarsus (seems to be standardized already)
+size_scale <- scale(LIOW[,6]) # scaled residual tarsus corrected for age at measurement
 
 # Create vector with occasion of marking
 get.first <- function(x) min(which(x!=0))
