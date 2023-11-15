@@ -697,10 +697,10 @@ season.surv
 ### calculate predicted annual survival for each individual
 
 pred.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
-  group_by(bird_id,simul,Male,weight,feeding) %>%
+  group_by(bird_id,simul,Male,weight,feeding,year) %>%
   summarise(sim.surv=prod(raw.surv)) %>%
   ungroup() %>%
-  group_by(bird_id,Male,weight,feeding) %>%
+  group_by(bird_id,Male,weight,feeding,year) %>%
   summarise(surv=quantile(sim.surv,0.5),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
     
 
@@ -721,6 +721,55 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
 
 ### plot actual N months of survival on x-axis against predicted surv on y-axis
 head(LIOW)
+
+
+LIOW %>% select(bird_id,ch) %>%
+  left_join(pred.ann.surv, by="bird_id") %>%
+  mutate(obs.surv=sapply(strsplit(ch, ''), function(x) sum(as.numeric(x)))) %>%
+  
+  
+  ggplot() +
+  geom_errorbar(aes(x=obs.surv, ymin=surv.lcl, ymax=surv.ucl, colour=factor(year)), width=0.2) +   ##, type=Origin
+  geom_point(aes(x=obs.surv, y=surv,colour=factor(year)),size=1, position=position_jitter(width=0.3))+     ## , linetype=Origin
+  
+  ## format axis ticks
+  scale_x_continuous(name="Observed survival (n fortnights)", limits=c(0,30), breaks=seq(0,30,5)) +
+  scale_y_continuous(name="Predicted annual survival probability", limits=c(0,1), breaks=seq(0,1,0.1)) +
+
+  scale_colour_manual(name="Year", values=c("cornflowerblue", "goldenrod", "firebrick"),
+                      breaks=c(1,2,3),labels=c(2009,2010,2011)) +
+  
+  ## beautification of the axes
+  theme(panel.background=element_rect(fill="white", colour="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.y=element_text(size=14, color="black"),
+        axis.text.x=element_text(size=14, color="black"), 
+        axis.title=element_text(size=18),
+        legend.text=element_text(size=14, color="black"),
+        legend.title=element_text(size=16, color="black"),
+        legend.background=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.position=c(0.92,0.88), 
+        strip.text=element_text(size=18, color="black"), 
+        strip.background=element_rect(fill="white", colour="black"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
