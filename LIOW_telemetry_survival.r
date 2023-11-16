@@ -36,6 +36,7 @@
 ## REVISED 19 OCT 2023 after exhaustive model selection decided on final model
 
 ## 16 NOV 2023 - NEED TO CURTAIL IND RANDOM EFFECT OR DO SOMETHING ELSE TO INCREASE ESTIMATED SURVIVAL
+## parallelised projection of realised survival estimates
 
 library(runjags)
 library(tidyverse)
@@ -666,9 +667,21 @@ gc()
 sprintf("epsilon[%i]",match(AnnTab$bird_id,LIOW$bird_id))
 
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# START PARALLEL PROCESSING
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-MCMCpred<-data.frame()
-for(s in 1:nrow(MCMCout)) {
+n.cores <- 12  ## this is to be run on the server
+registerDoParallel(n.cores)
+
+#Fit models in parallel, with chains running in parallel.----
+
+
+MCMCpred<- 
+  foreach(s = 1:nrow(MCMCout),.combine=rbind, .packages=c('tidyverse','dplyr'),.inorder=FALSE,.errorhandling="remove",.verbose=FALSE) %dopar% {
+    
+# MCMCpred<-data.frame()
+# for(s in 1:nrow(MCMCout)) {
   
   X<-  AnnTab %>%
     
@@ -689,7 +702,7 @@ for(s in 1:nrow(MCMCout)) {
                                 ifelse(season==4,"Spring","Summer")))) %>%
     mutate(simul=s)              
   
-  MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
+  #MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
   
 }
 
@@ -720,7 +733,7 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   group_by(bird_id,year,simul) %>%
   summarise(sim.surv=prod(raw.surv)) %>%
   ungroup() %>%
-  group_by(year) %>%
+  #group_by(year) %>%
   summarise(surv=mean(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
 
 
@@ -772,7 +785,7 @@ LIOW %>% select(bird_id,ch) %>%
 
 
 
-
+save.image("LIOW_surv_output_raneff.RData")
 
 
 
