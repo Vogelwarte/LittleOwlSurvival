@@ -659,7 +659,13 @@ rm(modelfit,MCMCpred)
 gc()
 
 
+
+
 ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
+### need to index individuals to match random effect
+sprintf("epsilon[%i]",match(AnnTab$bird_id,LIOW$bird_id))
+
+
 
 MCMCpred<-data.frame()
 for(s in 1:nrow(MCMCout)) {
@@ -671,7 +677,8 @@ for(s in 1:nrow(MCMCout)) {
              as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
-             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
+             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow +
+             as.numeric(MCMCout[s,match(sprintf("epsilon[%i]",match(bird_id,LIOW$bird_id)),parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
     mutate(surv=plogis(logit.surv)) %>%
