@@ -35,6 +35,8 @@
 
 ## REVISED 19 OCT 2023 after exhaustive model selection decided on final model
 
+## 16 NOV 2023 - NEED TO CURTAIL IND RANDOM EFFECT OR DO SOMETHING ELSE TO INCREASE ESTIMATED SURVIVAL
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -56,8 +58,8 @@ library(doParallel)
 # LOAD DATA FROM PREPARED WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
-#setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
+#setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
+setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 # renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
 # renv::snapshot()
 
@@ -107,7 +109,7 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-sigma ~ dunif(0, 2)                      # Prior for standard deviation for random survival effect
+sigma ~ dunif(0, 0.5)                      # Prior for standard deviation for random survival effect
 tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
@@ -216,10 +218,10 @@ cjs.init.z <- function(ch,f){
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 95, 10),
                          mean.p = c(runif(1, 0.9, 1),runif(1, 0.3, 0.9)),
-                         sigma = runif(1, 0, 2))}  
+                         sigma = runif(1, 0, 0.5))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep","epsilon")
 
 # MCMC settings
 nt <- 6
@@ -231,7 +233,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
