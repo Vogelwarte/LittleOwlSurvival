@@ -110,7 +110,7 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-sigma ~ dunif(0, 0.5)                      # Prior for standard deviation for random survival effect
+sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
 tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
@@ -219,7 +219,7 @@ cjs.init.z <- function(ch,f){
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 95, 10),
                          mean.p = c(runif(1, 0.9, 1),runif(1, 0.3, 0.9)),
-                         sigma = runif(1, 0, 0.5))}  
+                         sigma = runif(1, 0, 1))}  
 
 # Parameters monitored
 parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep","epsilon")
@@ -579,7 +579,7 @@ TableS2<- harsh.winter.surv %>%
   select(Supplemented,Sex,Mass,Season,mild.survival,harsh.survival)
 
 TableS2
-fwrite(TableS2,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
+#fwrite(TableS2,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
 
 
 
@@ -616,7 +616,7 @@ TABLES1 <- winter.vars %>%
   select(var,size,age,feeding,DIC,winter.effect,size.effect,age.effect,feed.effect) %>%
   rename(Winter.variable=var)
 TABLES1
-fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
+#fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
 
 
 
