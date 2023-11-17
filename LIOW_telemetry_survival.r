@@ -75,7 +75,7 @@ load("data/LIOW_SURV_INPUT.RData")
 
 
 # Specify model in JAGS language
-sink("models/LIOW_CJS_no_raneff.jags")
+sink("models/LIOW_CJS_no_raneff_pf.jags")
 cat("
 model {
 
@@ -84,11 +84,11 @@ for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
-                        beta.mass*weight[i] +
-                        beta.feed*feeding[i] + 
+                        beta.mass*weight[i]*pf[t] +
+                        beta.feed*feeding[i]*pf[t] + 
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
-                        beta.male*sex[i] #+
+                        beta.male*sex[i]*pf[t] #+
                         #epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
@@ -190,6 +190,7 @@ INPUT <- list(y = CH, f = f,
               recap.mat=recap.mat,
               season=season,
               feeding=feeding,
+              pf=ifelse(season==3,1,0),
               #winter=ifelse(season==3,1,0),
               #age=age_scale,
               #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
@@ -234,7 +235,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff_pf.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -269,7 +270,7 @@ null.model$summary$quantiles[15,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p","beta.yr"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCtrace(full.model$mcmc)
 MCMCsummary(full.model$mcmc)
@@ -410,7 +411,7 @@ MCMCpred<-
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
              as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight +
-             #as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
+             as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*scalesnow) %>%
