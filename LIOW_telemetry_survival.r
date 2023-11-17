@@ -75,7 +75,7 @@ load("data/LIOW_SURV_INPUT.RData")
 
 
 # Specify model in JAGS language
-sink("models/LIOW_CJS_FINAL.jags")
+sink("models/LIOW_CJS_no_raneff.jags")
 cat("
 model {
 
@@ -83,18 +83,18 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]] +
-                        #beta.yr[year[i]] +
+                        beta.yr[year[i]] +
                         beta.mass*weight[i] +
                         beta.feed*feeding[i] + 
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
-                        beta.male*sex[i] +
-                        epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
+                        beta.male*sex[i] #+
+                        #epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
 for (i in 1:nind){
-   epsilon[i] ~ dnorm(0, tau)
+   #epsilon[i] ~ dnorm(0, tau)
    epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
@@ -110,15 +110,15 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
-tau <- pow(sigma, -2)
+#sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
+#tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
 
-# for (y in 1:3) {
-#  beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect 
-#  #beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
-# }
+for (y in 1:3) {
+ beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect
+ #beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
+}
 
 #beta.size ~ dnorm(0, 1)                     # Prior for size effect 
 #beta.age ~ dnorm(0, 1)                     # Prior for age effect 
@@ -234,7 +234,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -397,8 +397,13 @@ Xin<-AnnTab
 
 ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
 
-MCMCpred<-data.frame()
-for(s in 1:nrow(MCMCout)) {
+n.cores <- 12  ## this is to be run on the server
+registerDoParallel(n.cores)
+MCMCpred<- 
+  foreach(s = 1:nrow(MCMCout),.combine=rbind, .packages=c('tidyverse','dplyr'),.inorder=FALSE,.errorhandling="remove",.verbose=FALSE) %dopar% {
+    
+# MCMCpred<-data.frame()
+# for(s in 1:nrow(MCMCout)) {
   
   X<-  Xin %>%
     
@@ -419,7 +424,7 @@ for(s in 1:nrow(MCMCout)) {
                                 ifelse(season==4,"Spring","Summer")))) %>%
     mutate(simul=s)              
   
-  MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
+  #MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
   
 }
 
@@ -690,8 +695,8 @@ MCMCpred<-
              as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
              as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
-             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow +
-             as.numeric(MCMCout[s,match(sprintf("epsilon[%i]",match(bird_id,LIOW$bird_id)),parmcols)])*snow) %>%
+             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
+             #as.numeric(MCMCout[s,match(sprintf("epsilon[%i]",match(bird_id,LIOW$bird_id)),parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
     mutate(surv=plogis(logit.surv)) %>%
@@ -733,7 +738,7 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   group_by(bird_id,year,simul) %>%
   summarise(sim.surv=prod(raw.surv)) %>%
   ungroup() %>%
-  #group_by(year) %>%
+  group_by(year) %>%
   summarise(surv=mean(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
 
 
