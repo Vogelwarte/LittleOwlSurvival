@@ -1,0 +1,53 @@
+
+model {
+
+# Priors and constraints
+for (i in 1:nind){
+   for (t in f[i]:(n.occasions-1)){
+      logit(phi[i,t]) <- mu
+      logit(p[i,t]) <- mu.p #+ epsilon.p[t] 
+      } #t
+   } #i
+# for (t in 1:n.occasions){
+#    epsilon.p[t] ~ dnorm(0, tau.p)
+# }
+   
+   mean.phi ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+   mu <- log(mean.phi / (1-mean.phi))       # Logit transformation
+
+   mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
+   mu.p <- log(mean.p / (1-mean.p))       # Logit transformation 
+
+# sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
+# tau.p <- pow(sigma.p, -2)
+
+# Likelihood 
+for (i in 1:nind){
+   # Define latent state at first capture
+   z[i,f[i]] <- 1
+   z.rep[i,f[i]] <- 1 # replicate z (true state)
+   y.rep[i,f[i]] <- 1 # replicate y (data)
+   for (t in (f[i]+1):n.occasions){
+      # State process
+      z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
+      z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
+      # Observation process
+      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+
+    
+    } #t end
+      #Derived parameters
+      
+        ## GOODNESS OF FIT TEST SECTION
+        ## Discrepancy observed data
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+
+        ## Discrepancy replicated data
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+      
+   } #i end
+      fit <- sum(E.obs[])
+      fit.rep <- sum(E.rep[])
+}
+
