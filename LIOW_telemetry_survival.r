@@ -875,7 +875,7 @@ for (i in 1:nind){
    } #i
 for (i in 1:nind){
    #epsilon[i] ~ dnorm(0, tau)
-   epsilon.p[i] ~ dnorm(0, tau.p)
+   epsilon.p[i] ~ dnorm(0, 50)
 }
    
   for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
@@ -892,8 +892,8 @@ for (i in 1:nind){
 
 #sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
 #tau <- pow(sigma, -2)
-sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
-tau.p <- pow(sigma.p, -2)
+# sigma.p ~ dnorm(0, 2)                      # Prior for standard deviation for random detection effect
+# tau.p <- pow(sigma.p, -2)
 
 # Likelihood 
 for (i in 1:nind){
@@ -951,17 +951,22 @@ basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
                        model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic.jags",
                        n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                        method = "rjparallel") 
-
+basic.model.summary<-summary(basic.model)
 
 #### MODEL ASSESSMENT ####
 MCMCplot(basic.model$mcmc, params=c("mean.phi"))
 
-stage.surv<-  as_tibble(basic.model$summary$quantiles[1:4,c(3,1,5)]) %>%
-  rename(surv=`50%`,surv.lcl=`2.5%`,surv.ucl=`97.5%`) %>%
+stage.surv<-  as_tibble(basic.model.summary[1:4,c(2,1,3)]) %>%
+  rename(surv=`Median`,surv.lcl=`Lower95`,surv.ucl=`Upper95`) %>%
   mutate(dur=c(5,6,10,5)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 prod(stage.surv$surv)
+
+
+## CHECK THE DISTRIBUTION OF THE RANDOM DETECTION EFFECT
+
+hist(basic.model.summary[8:300,2])
 
 
 ## USING THE CALCULATED FIT VALUES FROM THE JAGS MODEL
