@@ -4,14 +4,12 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] #+
-                        #epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
+      logit(phi[i,t]) <- mu[season[t]]
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[i] 
       } #t
    } #i
 for (i in 1:nind){
-   #epsilon[i] ~ dnorm(0, tau)
-   epsilon.p[i] ~ dnorm(0, 50)
+   epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
   for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
@@ -26,10 +24,8 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-#sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
-#tau <- pow(sigma, -2)
-# sigma.p ~ dnorm(0, 2)                      # Prior for standard deviation for random detection effect
-# tau.p <- pow(sigma.p, -2)
+sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
+tau.p <- pow(sigma.p, -2)
 
 # Likelihood 
 for (i in 1:nind){

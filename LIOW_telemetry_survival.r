@@ -868,14 +868,12 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu[season[t]] #+
-                        #epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
+      logit(phi[i,t]) <- mu[season[t]]
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[i] 
       } #t
    } #i
 for (i in 1:nind){
-   #epsilon[i] ~ dnorm(0, tau)
-   epsilon.p[i] ~ dnorm(0, 50)
+   epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
   for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
@@ -890,10 +888,8 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-#sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
-#tau <- pow(sigma, -2)
-# sigma.p ~ dnorm(0, 2)                      # Prior for standard deviation for random detection effect
-# tau.p <- pow(sigma.p, -2)
+sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
+tau.p <- pow(sigma.p, -2)
 
 # Likelihood 
 for (i in 1:nind){
@@ -981,3 +977,51 @@ ggplot(GOF,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge(
   annotate("text",label=as.character(round(mean(GOF$P),2)),x=20,y=20,size=8, colour="firebrick")
 
 mean(GOF$P)
+
+
+
+
+### plot actual N months of survival on x-axis against predicted surv on y-axis
+head(LIOW)
+
+
+LIOW %>% select(bird_id,ch) %>%
+  left_join(pred.ann.surv, by="bird_id") %>%
+  mutate(ran.p=basic.model.summary[8:314,2]) %>%
+  mutate(ran.p.lcl=basic.model.summary[8:314,1]) %>%
+  mutate(ran.p.ucl=basic.model.summary[8:314,3]) %>%
+  mutate(obs.surv=sapply(strsplit(ch, ''), function(x) sum(as.numeric(x)))) %>%
+  
+  
+  ggplot(aes(x=obs.surv, y=ran.p,ymin=ran.p.lcl, ymax=ran.p.ucl, colour=factor(year))) +
+  geom_pointrange(aes(x=obs.surv, y=ran.p,ymin=ran.p.lcl, ymax=ran.p.ucl, colour=factor(year)), 
+                  position=position_jitter(width=0.5), linetype='solid') +
+  #geom_smooth(method='lm') +
+  
+  ## format axis ticks
+  scale_x_continuous(name="Observed survival (n fortnights)", limits=c(0,30), breaks=seq(0,30,5)) +
+  scale_y_continuous(name="Random detection probability", limits=c(0,0.1), breaks=seq(0,0.1,0.01)) +
+  
+  scale_colour_manual(name="Year", values=c("cornflowerblue", "goldenrod", "firebrick"),
+                      breaks=c(1,2,3),labels=c(2009,2010,2011)) +
+  
+  ## beautification of the axes
+  theme(panel.background=element_rect(fill="white", colour="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        axis.text.y=element_text(size=14, color="black"),
+        axis.text.x=element_text(size=14, color="black"), 
+        axis.title=element_text(size=18),
+        legend.text=element_text(size=14, color="black"),
+        legend.title=element_text(size=16, color="black"),
+        legend.background=element_blank(),
+        legend.key = element_rect(fill = NA),
+        legend.position=c(0.92,0.88), 
+        strip.text=element_text(size=18, color="black"), 
+        strip.background=element_rect(fill="white", colour="black"))
+
+
+
+
+
+
+save.image("LIOW_surv_output_raneff.RData")
+
