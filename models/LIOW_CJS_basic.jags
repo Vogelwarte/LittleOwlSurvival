@@ -5,11 +5,11 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       logit(phi[i,t]) <- mu[season[t]]
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[i] 
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[t] 
       } #t
    } #i
-for (i in 1:nind){
-   epsilon.p[i] ~ dnorm(0, tau.p)
+for (t in 1:n.occasions){
+   epsilon.p[t] ~ dnorm(0, tau.p)
 }
    
   for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
