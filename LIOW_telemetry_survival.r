@@ -59,7 +59,7 @@ library(doParallel)
 # LOAD DATA FROM PREPARED WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
-#setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
+setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 # renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
 # renv::snapshot()
@@ -103,7 +103,7 @@ for (i in 1:nind){
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
-   mean.p[1] ~ dunif(0.9, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[1] ~ dunif(0.7, 0.98)                     # Prior for mean recapture during full effort periods
    mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
    for (y in 1:2) {
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
@@ -219,7 +219,7 @@ cjs.init.z <- function(ch,f){
 
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 95, 10),
-                         mean.p = c(runif(1, 0.9, 1),runif(1, 0.3, 0.9)),
+                         mean.p = c(runif(1, 0.71, 0.98),runif(1, 0.31, 0.89)),
                          sigma = runif(1, 0, 1))}  
 
 # Parameters monitored
@@ -235,7 +235,7 @@ ni=3500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff_pf.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff_pf.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
