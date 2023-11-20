@@ -99,11 +99,11 @@ for (i in 1:nind){
 }
    
   for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
-   mean.phi[s] ~ dbeta(95, 10)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+   mean.phi[s] ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
-   mean.p[1] ~ dunif(0.7, 0.98)                     # Prior for mean recapture during full effort periods
+   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
    mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
    for (y in 1:2) {
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
@@ -230,8 +230,8 @@ nt <- 6
 nb <- 200
 nc <- 3
 nad<-100
-ns<-2000
-ni=3500
+ns<-1000
+ni=1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
@@ -741,13 +741,14 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   summarise(sim.surv=prod(raw.surv)) %>%
   ungroup() %>%
   #group_by(year) %>%
-  summarise(surv=mean(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
+  summarise(surv=median(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
 
+mean.ann.surv
 
 ### compare to actual survival
-
 sum(apply(CH[,c(27:30)],1,max)) / dim(CH)[1]
 
+0.2084691^(1/26)
 
 ##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
 ########### extract actual survival of individuals and plot correlation
