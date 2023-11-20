@@ -192,7 +192,7 @@ INPUT <- list(y = CH, f = f,
               feeding=feeding,
               #winter=ifelse(season==3,1,0),
               #age=age_scale,
-              #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
+              pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
               #simpleage=as.numeric(simpleage_scale),
               sex=sex,
               #size=size,
@@ -391,7 +391,8 @@ AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
                    sex=c(0,1)) %>%
   mutate(scaleweight=(weight-attr(weight_scale, 'scaled:scale'))/attr(weight_scale, 'scaled:scale')) %>% 
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
-  mutate(scalesnow=(snow-snowmean)/snowsd)
+  mutate(scalesnow=(snow-snowmean)/snowsd) %>%
+  mutate(pf=ifelse(season==1,1,0))
 
 Xin<-AnnTab
 
@@ -409,10 +410,10 @@ MCMCpred<-
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight +
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight*pf +
              as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
-             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex*pf +
+             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding*pf +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*scalesnow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
@@ -655,7 +656,8 @@ snowpred
 ### REPLICATE BASIC INDIVIDUAL COVARIATES FOR 26 FORTNIGHTS
 AnnTab<-LIOWbase %>% slice(rep(row_number(), 26)) %>%
   mutate(occ=rep(c(1:26), each=dim(LIOW)[1])) %>%
-  left_join(snowpred, b=c('year','occ'))
+  left_join(snowpred, b=c('year','occ')) %>%
+  mutate(pf=ifelse(season==1,1,0))
 
 ### check that it looks alright
 AnnTab %>% filter(bird_id=="2010RW051.3")
@@ -671,7 +673,7 @@ gc()
 ### CALCULATE PREDICTED VALUE FOR EACH SAMPLE
 ### need to index individuals to match random effect
 sprintf("epsilon[%i]",match(AnnTab$bird_id,LIOW$bird_id))
-
+match(sprintf("beta.yr[%i]",as.numeric(LIOW$year[match(AnnTab$bird_id,LIOW$bird_id)])-2008),parmcols)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # START PARALLEL PROCESSING
@@ -693,9 +695,10 @@ MCMCpred<-
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
-             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight*pf +
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex*pf +
+             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding*pf +
+             as.numeric(MCMCout[s,match(sprintf("beta.yr[%i]",as.numeric(LIOW$year[match(bird_id,LIOW$bird_id)])-2008),parmcols)]) +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
              #as.numeric(MCMCout[s,match(sprintf("epsilon[%i]",match(bird_id,LIOW$bird_id)),parmcols)])*snow) %>%
     
@@ -848,3 +851,128 @@ save.image("LIOW_surv_output_raneff.RData")
 # # Focus on phi
 # DIC2.D1M1=DIC.calc(INPUT, modelfit$mcmc, DevCalc2beta)
 # PrintDIC(DIC2.D1M1, "Data 1, Model 1")
+
+
+
+
+
+##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
+########### fit simplest possible model #############################################################################
+##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
+
+# Specify model in JAGS language
+sink("models/LIOW_CJS_basic.jags")
+cat("
+model {
+
+# Priors and constraints
+for (i in 1:nind){
+   for (t in f[i]:(n.occasions-1)){
+      logit(phi[i,t]) <- mu[season[t]] #+
+                        #epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
+      } #t
+   } #i
+for (i in 1:nind){
+   #epsilon[i] ~ dnorm(0, tau)
+   epsilon.p[i] ~ dnorm(0, tau.p)
+}
+   
+  for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
+   mean.phi[s] ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+   mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
+  }
+   
+   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
+   for (y in 1:2) {
+    mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
+   }
+  mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
+
+#sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
+#tau <- pow(sigma, -2)
+sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
+tau.p <- pow(sigma.p, -2)
+
+# Likelihood 
+for (i in 1:nind){
+   # Define latent state at first capture
+   z[i,f[i]] <- 1
+   z.rep[i,f[i]] <- 1 # replicate z (true state)
+   y.rep[i,f[i]] <- 1 # replicate y (data)
+   for (t in (f[i]+1):n.occasions){
+      # State process
+      z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
+      z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
+      # Observation process
+      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+
+    
+    } #t end
+      #Derived parameters
+      
+        ## GOODNESS OF FIT TEST SECTION
+        ## Discrepancy observed data
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+
+        ## Discrepancy replicated data
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+      
+   } #i end
+      fit <- sum(E.obs[])
+      fit.rep <- sum(E.rep[])
+}
+",fill = TRUE)
+sink()
+
+### ENSURE REPEATABLE SCALING OF SNOWMAT ##
+INPUT <- list(y = CH, f = f,
+              nind = dim(CH)[1],
+              n.occasions = dim(CH)[2],
+              z = known.state.cjs(CH),
+              season=season,
+              recap.mat=recap.mat)  ### select any of the winter covariates 
+
+# Parameters monitored
+parameters <- c("mean.phi","deviance","fit","fit.rep","epsilon.p")
+
+# MCMC settings
+nt <- 6
+nb <- 200
+nc <- 3
+nad<-100
+ns<-1000
+ni=1500
+
+# Call JAGS from R
+basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
+                       model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic.jags",
+                       n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                       method = "rjparallel") 
+
+
+#### MODEL ASSESSMENT ####
+MCMCplot(basic.model$mcmc, params=c("mean.phi"))
+
+stage.surv<-  as_tibble(basic.model$summary$quantiles[1:4,c(3,1,5)]) %>%
+  rename(surv=`50%`,surv.lcl=`2.5%`,surv.ucl=`97.5%`) %>%
+  mutate(dur=c(5,6,10,5)) %>%
+  mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
+stage.surv
+prod(stage.surv$surv)
+
+
+## USING THE CALCULATED FIT VALUES FROM THE JAGS MODEL
+OBS <- MCMCpstr(basic.model$mcmc, params=c("fit"), type="chains")
+REP <- MCMCpstr(basic.model$mcmc, params=c("fit.rep"), type="chains")
+GOF<-tibble(Rep=as.numeric(REP[[1]]),Obs=as.numeric(OBS[[1]])) %>%
+  mutate(P=ifelse(Obs>Rep,1,0))
+
+ggplot(GOF,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge()) +
+  geom_abline(intercept = 0, slope = 1) +
+  theme(legend.position="none") +
+  annotate("text",label=as.character(round(mean(GOF$P),2)),x=20,y=20,size=8, colour="firebrick")
+
+mean(GOF$P)
