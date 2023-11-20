@@ -77,19 +77,13 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu
-      logit(p[i,t]) <- mu.p #+ epsilon.p[t] 
+      phi[i,t] <- mean.phi
+      p[i,t] <- mean.p * recap.mat[i,t] 
       } #t
    } #i
-# for (t in 1:n.occasions){
-#    epsilon.p[t] ~ dnorm(0, tau.p)
-# }
-   
-   mean.phi ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
-   mu <- log(mean.phi / (1-mean.phi))       # Logit transformation
 
+   mean.phi ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
-   mu.p <- log(mean.p / (1-mean.p))       # Logit transformation 
 
 # sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 # tau.p <- pow(sigma.p, -2)
@@ -140,10 +134,11 @@ inits <- function(){list(z = cjs.init.z(CH, f),
 INPUT <- list(y = CH, f = f,
               nind = dim(CH)[1],
               n.occasions = dim(CH)[2],
+              recap.mat=ifelse(recap.mat==3,0,1),
               z = known.state.cjs(CH))  ### select any of the winter covariates 
 
 # Parameters monitored
-parameters <- c("mean.phi","mean.p","deviance","fit","fit.rep","epsilon.p")
+parameters <- c("mean.phi","mean.p","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -158,7 +153,6 @@ basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
                         model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                         method = "rjparallel") 
-basic.model.summary<-summary(basic.model)
 
 
 ### very crude annual survival estimate (everything constant)
@@ -172,8 +166,7 @@ sum(CH[,30]) / dim(CH)[1]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # GOODNESS OF FIT ASSESSMENT
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## https://agabrioblog.onrender.com/tutorial/gof-tests-jags/gof-tests-jags/
-## https://www.sciencedirect.com/topics/earth-and-planetary-sciences/goodness-of-fit
+## VERY POORLY FITTING MODEL
 
 ## USING THE CALCULATED FIT VALUES FROM THE JAGS MODEL
 OBS <- MCMCpstr(basic.model$mcmc, params=c("fit"), type="chains")

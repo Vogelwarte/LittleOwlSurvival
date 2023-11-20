@@ -4,8 +4,8 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      logit(phi[i,t]) <- mu
-      logit(p[i,t]) <- mu.p #+ epsilon.p[t] 
+      phi[i,t] <- mean.phi
+      p[i,t] <- mean.p *recap.mat[i,t] 
       } #t
    } #i
 # for (t in 1:n.occasions){
@@ -13,10 +13,7 @@ for (i in 1:nind){
 # }
    
    mean.phi ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
-   mu <- log(mean.phi / (1-mean.phi))       # Logit transformation
-
    mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
-   mu.p <- log(mean.p / (1-mean.p))       # Logit transformation 
 
 # sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 # tau.p <- pow(sigma.p, -2)
