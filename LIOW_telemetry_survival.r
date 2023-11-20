@@ -438,6 +438,7 @@ plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
   mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
+  #summarise(surv=mean(raw.surv,na.rm=T),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
   mutate(snow=c(0,0,0,0,4,8,12)) %>%
   arrange(age)
@@ -470,8 +471,8 @@ ggplot(plotdat)+
         strip.background=element_rect(fill="white", colour="black"))
 
 
-ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
-ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 
 
 
@@ -488,7 +489,7 @@ stage.surv<-  plotdat %>%
 stage.surv
 
 ## ALTERNATIVE MORE REALISTIC SCENARIO
-## manually assemble winters by assuming that sever stages only occur for a fraction of winter period
+## manually assemble winters by assuming that severe stages only occur for a fraction of winter period
 season.surv<-stage.surv
 season.surv[4,4]<-  plotdat$surv[4]^5 * plotdat$surv[3]^5
 season.surv[4,5]<-  plotdat$surv.lcl[4]^5 * plotdat$surv.lcl[3]^5
@@ -600,35 +601,35 @@ TableS2
 
 
 
-##### CREATE TABLE S1 FROM MODEL SELECTION RESULTS  ##########
-
-winter.vars<-fread("output/LIOW_model_selection_DIC_table_winenv.csv")%>%
-  arrange(DIC)
-
-winter.vars %>% filter(feeding=="yes")
-
-
-## create TABLE S1
-
-TABLES1 <- winter.vars %>%
-  mutate(winter.effect=sprintf("%s (%s – %s)",round(beta_med,3),round(beta_lcl,3),round(beta_ucl,3))) %>%
-  mutate(size.effect=sprintf("%s (%s – %s)",round(beta_size,3),round(beta_size_lcl,3),round(beta_size_ucl,3))) %>%
-  mutate(age.effect=sprintf("%s (%s – %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
-  mutate(feed.effect=sprintf("%s (%s – %s)",round(beta_feed,3),round(beta_feed_lcl,3),round(beta_feed_ucl,3))) %>%
-  mutate(age.effect=if_else(age=="no","",age.effect)) %>%
-  mutate(feed.effect=if_else(feeding=="no","",feed.effect)) %>%
-  mutate(size.effect=if_else(size=="none","",size.effect)) %>%
-  arrange(DIC) %>%
-  select(var,size,age,feeding,DIC,winter.effect,size.effect,age.effect,feed.effect) %>%
-  rename(Winter.variable=var)
-TABLES1
-#fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
-
-
-
-
-
-
+# ##### CREATE TABLE S1 FROM MODEL SELECTION RESULTS  ##########
+# 
+# winter.vars<-fread("output/LIOW_model_selection_DIC_table_winenv.csv")%>%
+#   arrange(DIC)
+# 
+# winter.vars %>% filter(feeding=="yes")
+# 
+# 
+# ## create TABLE S1
+# 
+# TABLES1 <- winter.vars %>%
+#   mutate(winter.effect=sprintf("%s (%s – %s)",round(beta_med,3),round(beta_lcl,3),round(beta_ucl,3))) %>%
+#   mutate(size.effect=sprintf("%s (%s – %s)",round(beta_size,3),round(beta_size_lcl,3),round(beta_size_ucl,3))) %>%
+#   mutate(age.effect=sprintf("%s (%s – %s)",round(beta_age_med,3),round(beta_age_lcl,3),round(beta_age_ucl,3))) %>%
+#   mutate(feed.effect=sprintf("%s (%s – %s)",round(beta_feed,3),round(beta_feed_lcl,3),round(beta_feed_ucl,3))) %>%
+#   mutate(age.effect=if_else(age=="no","",age.effect)) %>%
+#   mutate(feed.effect=if_else(feeding=="no","",feed.effect)) %>%
+#   mutate(size.effect=if_else(size=="none","",size.effect)) %>%
+#   arrange(DIC) %>%
+#   select(var,size,age,feeding,DIC,winter.effect,size.effect,age.effect,feed.effect) %>%
+#   rename(Winter.variable=var)
+# TABLES1
+# #fwrite(TABLES1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS1_DIC.csv")
+# 
+# 
+# 
+# 
+# 
+# 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ESTIMATE ANNUAL SURVIVAL FOR OUR SAMPLE OF BIRDS FIRST YEAR LITTLE OWLS
@@ -739,7 +740,7 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   group_by(bird_id,year,simul) %>%
   summarise(sim.surv=prod(raw.surv)) %>%
   ungroup() %>%
-  group_by(year) %>%
+  #group_by(year) %>%
   summarise(surv=mean(sim.surv),surv.lcl=quantile(sim.surv,0.025),surv.ucl=quantile(sim.surv,0.975))
 
 
