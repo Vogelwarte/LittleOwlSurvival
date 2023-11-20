@@ -190,7 +190,6 @@ INPUT <- list(y = CH, f = f,
               recap.mat=recap.mat,
               season=season,
               feeding=feeding,
-              pf=ifelse(season==3,1,0),
               #winter=ifelse(season==3,1,0),
               #age=age_scale,
               #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
@@ -218,7 +217,7 @@ cjs.init.z <- function(ch,f){
 }
 
 inits <- function(){list(z = cjs.init.z(CH, f),
-                         mean.phi = rbeta(4, 95, 10),
+                         mean.phi = rbeta(4, 94, 5),
                          mean.p = c(runif(1, 0.71, 0.98),runif(1, 0.31, 0.89)),
                          sigma = runif(1, 0, 1))}  
 
