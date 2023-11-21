@@ -76,6 +76,11 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
       phi[i,t] <- pow(mean.phi,1/26)
+      } #t
+   } #i
+   
+for (i in 1:nind){
+   for (t in (f[i]+1):n.occasions){
       p[i,t] <- mean.p * recap.mat[i,t] 
       } #t
    } #i
@@ -97,23 +102,23 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
-      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
 
     
     } #t end
-      #Derived parameters
-      
-        ## GOODNESS OF FIT TEST SECTION
-        ## Discrepancy observed data
-        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
-
-        ## Discrepancy replicated data
-        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
-      
-   } #i end
-      fit <- sum(E.obs[])
-      fit.rep <- sum(E.rep[])
+   #    #Derived parameters
+   #    
+   #      ## GOODNESS OF FIT TEST SECTION
+   #      ## Discrepancy observed data
+   #      E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+   # 
+   #      ## Discrepancy replicated data
+   #      E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+   #    
+    } #i end
+   #    fit <- sum(E.obs[])
+   #    fit.rep <- sum(E.rep[])
 }
 ",fill = TRUE)
 sink()
@@ -158,8 +163,8 @@ basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 basic.model$summary$quantiles[1,c(1,3,5)]^26
 
 ### compare to actually OBSERVED survival
-sum(apply(CH[,c(27:28)],1,max)) / dim(CH)[1]
-sum(CH[,28]) / dim(CH)[1]
+sum(apply(CH[,c(29:30)],1,max)) / dim(CH)[1]
+sum(CH[,29]) / dim(CH)[1]
 
 
 
