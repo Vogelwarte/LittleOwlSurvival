@@ -7,6 +7,8 @@
 # based on data by Marco Perrig
 # stripped down very basic model to investigate why estimated survival is LOWER than observed survival
 
+## MAJOR PROBLEM IDENTIFIED: recap.mat is not aligned properly!!
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -74,17 +76,12 @@ model {
 
 # Priors and constraints
 for (i in 1:nind){
-   for (t in f[i]:(n.occasions-1)){
+   for (t in f[i]:(n.occasions)){
       phi[i,t] <- pow(mean.phi,1/26)
-      } #t
-   } #i
-   
-for (i in 1:nind){
-   for (t in (f[i]+1):n.occasions){
       p[i,t] <- mean.p * recap.mat[i,t] 
       } #t
    } #i
-
+   
    mean.phi ~ dbeta(10, 35)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
 
@@ -107,18 +104,18 @@ for (i in 1:nind){
 
     
     } #t end
-   #    #Derived parameters
-   #    
-   #      ## GOODNESS OF FIT TEST SECTION
-   #      ## Discrepancy observed data
-   #      E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
-   # 
-   #      ## Discrepancy replicated data
-   #      E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
-   #    
+      #Derived parameters
+
+        ## GOODNESS OF FIT TEST SECTION
+        ## Discrepancy observed data
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+
+        ## Discrepancy replicated data
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+
     } #i end
-   #    fit <- sum(E.obs[])
-   #    fit.rep <- sum(E.rep[])
+      fit <- sum(E.obs[])
+      fit.rep <- sum(E.rep[])
 }
 ",fill = TRUE)
 sink()
@@ -133,6 +130,11 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(1, 10, 35),
                          mean.p = runif(1, 0, 1))}  
 
+
+### FIND OCC WITH 0 detections
+## cannot work because each column represents a different year
+apply(CH[LIOW$year==2009,],2,sum)
+apply(recap.mat[LIOW$year==2009,],2,max)
 
 ### ENSURE REPEATABLE SCALING OF SNOWMAT ##
 INPUT <- list(y = CH, f = f,

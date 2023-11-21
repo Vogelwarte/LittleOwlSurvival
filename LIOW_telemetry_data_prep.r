@@ -425,9 +425,9 @@ sex[!(sex %in% c(0,1))]<-rbinom(n=sum(table(sex)[2:3]),size=1,prob=known.male.ra
 
 recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
 
-recap.mat[year==1,(c(15,16,17,18)+6)] <- 2
-recap.mat[year==2,(c(11,16)+6)] <- 2
-recap.mat[year==1,(c(14,19,20,21)+6)] <- 3
+recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
+recap.mat[year==2,(c(11,16)+7)] <- 2
+recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 
 
 
