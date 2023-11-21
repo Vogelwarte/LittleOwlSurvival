@@ -4,15 +4,12 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      phi[i,t] <- mean.phi
-      p[i,t] <- mean.p *recap.mat[i,t] 
+      phi[i,t] <- pow(mean.phi,1/26)
+      p[i,t] <- mean.p * recap.mat[i,t] 
       } #t
    } #i
-# for (t in 1:n.occasions){
-#    epsilon.p[t] ~ dnorm(0, tau.p)
-# }
-   
-   mean.phi ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+
+   mean.phi ~ dbeta(10, 35)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
 
 # sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect

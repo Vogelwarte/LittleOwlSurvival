@@ -5,7 +5,7 @@
 ##########################################################################
 # written by Steffen Oppel, July 2023
 # based on data by Marco Perrig
-
+# stripped down very basic model to investigate why estimated survival is LOWER than observed survival
 
 library(runjags)
 library(tidyverse)
@@ -16,8 +16,6 @@ library(tidyverse)
 filter<-dplyr::filter
 select<-dplyr::select
 library(MCMCvis)
-library(foreach)
-library(doParallel)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -62,7 +60,7 @@ cjs.init.z <- function(ch,f){
   return(ch)
 }
 
-
+get.first <- function(x) min(which(x!=0))
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SPECIFY SURVIVAL MODEL IN JAGS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,12 +75,12 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions-1)){
-      phi[i,t] <- mean.phi
+      phi[i,t] <- pow(mean.phi,1/26)
       p[i,t] <- mean.p * recap.mat[i,t] 
       } #t
    } #i
 
-   mean.phi ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+   mean.phi ~ dbeta(10, 35)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
 
 # sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
@@ -121,13 +119,14 @@ for (i in 1:nind){
 sink()
 
 
-
-
+#### CURTAIL DATA AND PREPARE FOR MODEL #####
+# CH<-CH[,1:28]
+# recap.mat<-recap.mat[,1:28]
+# f <- apply(CH, 1, get.first)
 
 inits <- function(){list(z = cjs.init.z(CH, f),
-                         mean.phi = rbeta(1, 94, 5),
-                         mean.p = runif(1, 0, 1),
-                         sigma.p = runif(1, 0, 1))}  
+                         mean.phi = rbeta(1, 10, 35),
+                         mean.p = runif(1, 0, 1))}  
 
 
 ### ENSURE REPEATABLE SCALING OF SNOWMAT ##
@@ -135,7 +134,7 @@ INPUT <- list(y = CH, f = f,
               nind = dim(CH)[1],
               n.occasions = dim(CH)[2],
               recap.mat=ifelse(recap.mat==3,0,1),
-              z = known.state.cjs(CH))  ### select any of the winter covariates 
+              z = known.state.cjs(CH))
 
 # Parameters monitored
 parameters <- c("mean.phi","mean.p","deviance","fit","fit.rep")
@@ -150,7 +149,7 @@ ni=1500
 
 # Call JAGS from R
 basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                        model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
+                        model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                         method = "rjparallel") 
 
@@ -159,8 +158,10 @@ basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 basic.model$summary$quantiles[1,c(1,3,5)]^26
 
 ### compare to actually OBSERVED survival
-sum(apply(CH[,c(29:30)],1,max)) / dim(CH)[1]
-sum(CH[,30]) / dim(CH)[1]
+sum(apply(CH[,c(27:28)],1,max)) / dim(CH)[1]
+sum(CH[,28]) / dim(CH)[1]
+
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
