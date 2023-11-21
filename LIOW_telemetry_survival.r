@@ -81,7 +81,7 @@ model {
 
 # Priors and constraints
 for (i in 1:nind){
-   for (t in f[i]:(n.occasions-1)){
+   for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
                         beta.mass*weight[i]*pf[t] +
@@ -141,8 +141,8 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
-      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
 
     
     } #t end
@@ -234,7 +234,7 @@ ni=1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff_pf.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -392,7 +392,7 @@ AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
   mutate(scaleweight=(weight-attr(weight_scale, 'scaled:scale'))/attr(weight_scale, 'scaled:scale')) %>% 
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
   mutate(scalesnow=(snow-snowmean)/snowsd) %>%
-  mutate(pf=ifelse(season==1,1,0))
+  mutate(pf=ifelse(season==5,1,0))
 
 Xin<-AnnTab
 
@@ -543,7 +543,7 @@ mild.season.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
   group_by(season,Season,sex,weight,feeding) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(dur=rep(c(5,6,10,5), each=12)) %>%
+  mutate(dur=rep(c(4,6,10,6), each=12)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 mild.season.surv
 
@@ -597,7 +597,7 @@ TableS2
 
 ### CALCULATE REDUCTION IN % ###
 
-(0.106-0.049)/0.106
+(0.157-0.108)/0.157
 
 
 

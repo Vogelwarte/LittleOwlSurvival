@@ -378,7 +378,7 @@ year <- as.numeric(LIOW$year)-2008
 feeding <- ifelse(LIOW$feeding=="Unfed",0,1)
 #season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
 #season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
-season<-c(rep(1,6),rep(2,6),rep(3,10),rep(4,7)) ## Summer x 6, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
+season<-c(rep(1,6),rep(2,6),rep(3,10),rep(4,8)) ## Summer x 6, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
 
 winter<-ifelse(season==3,1,0) ## binary variable for winter 
 

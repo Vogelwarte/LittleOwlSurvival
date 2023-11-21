@@ -3,7 +3,7 @@ model {
 
 # Priors and constraints
 for (i in 1:nind){
-   for (t in f[i]:(n.occasions-1)){
+   for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
                         beta.yr[year[i]] +
                         beta.mass*weight[i] +
@@ -25,8 +25,8 @@ for (i in 1:nind){
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
-   mean.p[1] ~ dunif(0.9, 1)                     # Prior for mean recapture during full effort periods
-   mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
+   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[2] ~ dunif(0.3, 1)                  # Prior for mean recapture during reduced effort periods
    for (y in 1:2) {
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
    }
@@ -63,8 +63,8 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
-      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
 
     
     } #t end
