@@ -86,13 +86,13 @@ for (i in 1:nind){
    for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
                         #beta.yr[year[i]] +
-                        beta.mass*weight[i] +
-                        beta.feed*feeding[i] + 
+                        beta.mass*weight[i]*pf[t] +
+                        beta.feed*feeding[i]*pf[t] + 
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
-                        beta.male*sex[i] #+
+                        beta.male*sex[i]*pf[t] #+
                         ##epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] ##+ epsilon.p[i]  ##  beta.p.yr[year[i]] + 
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
 for (i in 1:nind){
@@ -105,7 +105,7 @@ for (i in 1:nind){
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
-   mean.p[1] ~ dunif(0.9, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
    mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
    for (y in 1:2) {
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
@@ -395,7 +395,8 @@ AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
                    sex=c(0,1)) %>%
   mutate(scaleweight=(weight-attr(weight_scale, 'scaled:scale'))/attr(weight_scale, 'scaled:scale')) %>% 
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
-  mutate(scalesnow=(snow-snowmean)/snowsd)
+  mutate(scalesnow=(snow-snowmean)/snowsd) %>%
+  mutate(pf=ifelse(season==5,1,0))
 
 Xin<-AnnTab
 
@@ -408,10 +409,10 @@ for(s in 1:nrow(MCMCout)) {
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight +
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight*pf +
              #as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
-             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex*pf +
+             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding*pf +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*scalesnow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
