@@ -482,7 +482,7 @@ ggplot(plotdat)+
 ### simplistic season survival ###
 ## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
 stage.surv<-  plotdat %>%
-  mutate(dur=c(5,6,10,10,10,10,5)) %>%
+  mutate(dur=c(4,6,10,10,10,10,6)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 
@@ -595,7 +595,7 @@ TableS2
 
 ### CALCULATE REDUCTION IN % ###
 
-(0.106-0.049)/0.106
+(0.178-0.115)/0.178
 
 
 
@@ -647,14 +647,16 @@ snowpred<- as_tibble(snowmat) %>% gather(key="occ", value="snow") %>%
   mutate(year=rep(c(1,2,3), 30)) %>%
   mutate(season=rep(c(rep(1,6),rep(2,6),rep(3,10),rep(4,8)),each=3)) %>%
   mutate(occ=as.numeric(occ)) %>%
-  filter(occ<27) %>%
+  filter(occ>2) %>%
+  filter(occ<29) %>%
   arrange(year,occ)
 snowpred
 
 ### REPLICATE BASIC INDIVIDUAL COVARIATES FOR 26 FORTNIGHTS
 AnnTab<-LIOWbase %>% slice(rep(row_number(), 26)) %>%
-  mutate(occ=rep(c(1:26), each=dim(LIOW)[1])) %>%
-  left_join(snowpred, b=c('year','occ'))
+  mutate(occ=rep(c(3:28), each=dim(LIOW)[1])) %>%
+  left_join(snowpred, b=c('year','occ')) %>%
+  mutate(pf=ifelse(season==1,1,0))
 
 ### check that it looks alright
 AnnTab %>% filter(bird_id=="2010RW051.3")
@@ -692,11 +694,11 @@ MCMCpred<-
     
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
-             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight +
-             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex +
-             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding +
-             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow +
-             as.numeric(MCMCout[s,match(sprintf("epsilon[%i]",match(bird_id,LIOW$bird_id)),parmcols)])*snow) %>%
+             as.numeric(MCMCout[s,match("beta.mass",parmcols)])*weight*pf +
+             as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex*pf +
+             as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding*pf +
+             as.numeric(MCMCout[s,match("beta.win",parmcols)])*snow) %>%
+             #as.numeric(MCMCout[s,match(sprintf("epsilon[%i]",match(bird_id,LIOW$bird_id)),parmcols)])*snow) %>%
     
     ## BACKTRANSFORM TO NORMAL SCALE
     mutate(surv=plogis(logit.surv)) %>%
@@ -744,7 +746,7 @@ mean.ann.surv<-MCMCpred %>% rename(raw.surv=surv) %>%
 
 ### compare to actual survival
 
-sum(apply(CH[,c(27:30)],1,max)) / dim(CH)[1]
+sum(apply(CH[,c(29:30)],1,max)) / dim(CH)[1]
 
 
 ##################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~######################################
