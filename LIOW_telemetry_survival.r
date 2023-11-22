@@ -38,6 +38,8 @@
 ## 16 NOV 2023 - NEED TO CURTAIL IND RANDOM EFFECT OR DO SOMETHING ELSE TO INCREASE ESTIMATED SURVIVAL
 ## parallelised projection of realised survival estimates
 
+## 22 NOV 2023 - ADJUSTED MODEL TO FIX ERROR IN LIKELIHOOD (p[t-1] to p[t])
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -81,7 +83,7 @@ model {
 
 # Priors and constraints
 for (i in 1:nind){
-   for (t in f[i]:(n.occasions-1)){
+   for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
                         #beta.yr[year[i]] +
                         beta.mass*weight[i] +
@@ -141,8 +143,8 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
-      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
 
     
     } #t end
@@ -150,10 +152,10 @@ for (i in 1:nind){
       
         ## GOODNESS OF FIT TEST SECTION
         ## Discrepancy observed data
-        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):n.occasions] * z[i,(f[i]+1):n.occasions]) + 0.001)
 
         ## Discrepancy replicated data
-        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
       
    } #i end
       fit <- sum(E.obs[])
@@ -190,6 +192,7 @@ INPUT <- list(y = CH, f = f,
               recap.mat=recap.mat,
               season=season,
               feeding=feeding,
+              pf=ifelse(season==1,1,0),
               #winter=ifelse(season==3,1,0),
               #age=age_scale,
               #pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
@@ -229,12 +232,12 @@ nt <- 6
 nb <- 200
 nc <- 3
 nad<-100
-ns<-2000
-ni=3500
+ns<-1000
+ni<-1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
