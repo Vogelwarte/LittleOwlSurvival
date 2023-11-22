@@ -16,7 +16,7 @@ for (i in 1:nind){
       } #t
    } #i
 for (i in 1:nind){
-   epsilon[i] ~ dnorm(0, tau)
+   #epsilon[i] ~ dnorm(0, tau)
    epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
@@ -32,8 +32,8 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
-tau <- pow(sigma, -2)
+# sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
+# tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
 
@@ -63,8 +63,8 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t] * z[i,t])
-      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t]*nulleff.mat[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]*nulleff.mat[i,t]) # replicate y (observations)
 
     
     } #t end
