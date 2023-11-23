@@ -216,30 +216,28 @@ for(i in 1:nind){
 ##################
 # Priors and constraints
 for (i in 1:nind){
-   for (t in f[i]:(n.occasions)){
+   for (t in first[i]:last[i]){
       logit(phi[i,t]) <- mu[season[t]] +
-                        #beta.yr[year[i]] +
                         beta.mass*weight[i]*pf[t] +
                         beta.feed*feeding[i]*pf[t] + 
-                        #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
-                        beta.male*sex[i]*pf[t] #+
-                        ##epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
-      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
+                        beta.male*sex[i]*pf[t]
+      logit(p1[i,t]) <- mu.p[1]*recap.mat[i,t] + beta.p.win*env[year[i],t] + epsilon.p1[i]
+      logit(p2[i,t]) <- mu.p[2]*recap.mat[i,t] + beta.p.win*env[year[i],t] + epsilon.p2[i]
       } #t
    } #i
 for (i in 1:nind){
-   #epsilon[i] ~ dnorm(0, tau)
-   epsilon.p[i] ~ dnorm(0, tau.p)
+   epsilon.p1[i] ~ dnorm(0, tau.p)
+   epsilon.p2[i] ~ dnorm(0, tau.p)
 }
    
-  for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
+  for (s in 1:4){   ### baseline for the 4 seasons post-fledging dispersal, winter, breeding
    mean.phi[s] ~ dbeta(95, 10)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
-   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
-   mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
+   mean.p[1] ~ dunif(0, 1)                  # Prior for mean recapture ALIVE
+   mean.p[2] ~ dunif(0, 1)                  # Prior for recovery probability of DEAD bird
    for (y in 1:2) {
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
    }
@@ -252,11 +250,6 @@ beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, f
 beta.win ~ dunif(-2, 2)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
 beta.feed ~ dnorm(0, 1)                # Prior for effect of supplementary feeding
-
-
-
-
-
 
 }
 ",fill = TRUE)
@@ -272,7 +265,7 @@ known.state.cjs <- function(ch){
     state[i,n1:n2] <- 1
     state[i,n1] <- NA
   }
-  state[state==0] <- NA
+  state[state==3] <- NA
   return(state)
 }
 
@@ -283,6 +276,7 @@ snowsd<-sd(as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))
 snowmat<-(as.matrix((allcov.new %>% dplyr::filter(variable=="day.snow.cover0"))[,c(3:32)])-snowmean)/snowsd
 
 ### ENSURE REPEATABLE SCALING OF SNOWMAT ##
+get.last <- function(x) max(which(x<3))
 INPUT <- list(y = CH.ms, first = f,last=apply(CH.ms, 1, get.last),
               nind = dim(CH.ms)[1],
               n.occasions = dim(CH.ms)[2],
@@ -291,14 +285,10 @@ INPUT <- list(y = CH.ms, first = f,last=apply(CH.ms, 1, get.last),
               season=season,
               feeding=feeding,
               pf=ifelse(season==1,1,0), # to specify the post-fledging season and facilitate an age effect only for that season
-              #simpleage=as.numeric(simpleage_scale),
               sex=sex,
-              #size=size,
               year=as.numeric(year),
               weight=as.numeric(weight_scale),
-              env=snowmat)  ### select any of the winter covariates 
-              #env=as.matrix((allcov %>% dplyr::filter(variable=="day.snow.cover5"))[,c(26:31,3:25)]))  ### select any of the winter covariates 
-              #rain=as.matrix((allcov %>% dplyr::filter(variable=="total.precip"))[,3:25]))  ### select any of the winter covariates 
+              env=snowmat)  ### select any of the winter covariates
 
 # Initial values 
 # Function to create a matrix of initial values for latent state z
@@ -314,13 +304,13 @@ cjs.init.z <- function(ch,f){
   return(ch)
 }
 
-inits <- function(){list(z = cjs.init.z(CH, f),
+inits <- function(){list(#z = cjs.init.z(CH.ms, f),  ### removed because it caused conflict with supplied data and error "Cannot overwrite value of observed node"
                          mean.phi = rbeta(4, 94, 5),
-                         mean.p = c(runif(1, 0.71, 0.98),runif(1, 0.31, 0.89)),
+                         mean.p = runif(2, 0, 1),
                          sigma = runif(1, 0, 1))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep","epsilon")
+parameters <- c("mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance")
 
 # MCMC settings
 nt <- 6
@@ -332,7 +322,7 @@ ni=1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_multistate.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
