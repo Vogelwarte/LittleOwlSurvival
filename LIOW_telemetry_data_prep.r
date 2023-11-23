@@ -103,12 +103,12 @@ dim(ALLDAT)
 ### create fortnightly capture history to match data frame with LIOWpf below
 
 ALLDAT2w<-ALLDAT %>%
-  gather(key="OCC",value="STATE",-Individual, -Sex,-Treatment,-HatchOCC) %>%
+  gather(key="OCC",value="STATE",-Individual, -Sex,-Treatment,-HatchOCC,-DeathDate,-Ring) %>%
   filter(!is.na(as.numeric(STATE))) %>%
   #mutate(OCC=round(as.numeric(OCC)/2)*2) %>%
   mutate(OCC=ceiling(as.numeric(OCC)/2)) %>%
   mutate(HatchOCC=ceiling(as.numeric(HatchOCC)/2)) %>%
-  group_by(Individual, Sex,Treatment,HatchOCC,OCC) %>%
+  group_by(Individual, Ring, Sex,Treatment,HatchOCC,DeathDate,OCC) %>%
   summarise(STATE=max(STATE, na.rm=T)) %>%
   spread(key=OCC, value=STATE, fill=0) %>%
   rename(bird_id=Individual)
@@ -343,7 +343,7 @@ LIOWpf %>%
 
 #### MERGE ALL DATA FROM POST-FLEDGING AND REST OF YEAR
 
-LIOW<-LIOWpf %>% select(bird_id,CH2,hatch_date,Male,year,residual.weight,residual.tarsus,feeding,origin) %>%
+LIOW<-LIOWpf %>% select(bird_id,Ring,DeathDate,CH2,hatch_date,Male,year,residual.weight,residual.tarsus,feeding,origin) %>%
   left_join(LIOWch[,c(1,3,5,8)],by=c("bird_id","year")) %>%
   mutate(ch=ifelse(is.na(ch),"000000000000000000000000",ch)) %>%
   mutate(ch=paste(CH2,ch,sep="")) %>%
@@ -385,7 +385,7 @@ season<-c(rep(1,6),rep(2,6),rep(3,10),rep(4,8)) ## Summer x 6, Autumn x 6, Winte
 
 winter<-ifelse(season==3,1,0) ## binary variable for winter 
 
-age <- LIOW[,10]   # age in days on 1 Aug
+age <- LIOW[,12]   # age in days on 1 Aug
 agemat<-CH
 agemat[,7]<-age
 for(col in 6:1){
@@ -397,10 +397,10 @@ for(col in 8:N.occ){
 
 age_scale<-scale(agemat,center=F)  ## to prevent column-specific centering we need to set center=F
 simpleage_scale<-scale(age)  ## only use age on 1 Aug as offset rather than temporal progression
-weight <- LIOW[,5] # residual weight (seems to be standardized already)
-weight_scale <- scale(LIOW[,5]) # scaled residual weight corrected for age at weighing and growth curve
-size <- LIOW[,6] # residual tarsus (seems to be standardized already)
-size_scale <- scale(LIOW[,6]) # scaled residual tarsus corrected for age at measurement
+weight <- LIOW[,7] # residual weight (seems to be standardized already)
+weight_scale <- scale(LIOW[,7]) # scaled residual weight corrected for age at weighing and growth curve
+size <- LIOW[,8] # residual tarsus (seems to be standardized already)
+size_scale <- scale(LIOW[,8]) # scaled residual tarsus corrected for age at measurement
 
 # Create vector with occasion of marking
 get.first <- function(x) min(which(x!=0))
@@ -409,7 +409,7 @@ f <- apply(CH, 1, get.first)
 
 ### PREPARE SEX COVARIATE
 ## 80 individuals do not have an assigned sex, so we use the overall proportion and then randomly allocate birds to a sex
-sex <- LIOW[,3]
+sex <- LIOW[,5]
 table(sex)
 known.male.ratio<-table(sex)[4]/sum(table(sex)[c(1,4)])
 sex[!(sex %in% c(0,1))]<-rbinom(n=sum(table(sex)[2:3]),size=1,prob=known.male.ratio)
@@ -438,6 +438,29 @@ which(apply(CH[LIOW$year==2009,],2,sum)==0)
 which(apply(recap.mat[LIOW$year==2009,],2,max)==3)
 
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# CHECK INTERNAL 0s AND WHETHER THEY COULD BE IMPUTED
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## first look at the animals from 2009 that survived at least 2 months
+CH[LIOW$year==2010,]
+CH[which(apply(CH[LIOW$year==2009,],1,sum)>5),]
+
+## check odd individual that went missing for 40 weeks!
+LIOW[32,]
+
+## create function to find individuals with internal zeros, by dividing sum over last-first occ
+get.first <- function(x) min(which(x!=0))
+get.last <- function(x) max(which(x!=0))
+f<- apply(CH, 1, get.first)
+l<- apply(CH, 1, get.last)
+n<-apply(CH,1,sum)
+## flag all birds with internal zeros
+LIOW[which(((l-f+1)/n)>1),]
+
+
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # READ IN DEATH DATA AND ADJUST CH FOR MULTISTATE MODEL 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -448,6 +471,14 @@ which(apply(recap.mat[LIOW$year==2009,],2,max)==3)
 #   filter(loc_status=="dead") %>%
 #   select(ring,NAME,ID,sex,DATE)
 # deaths$NAME %in% LIOW$bird_id
+
+### insert death as number 2 in CH for birds found dead
+l<- apply(CH, 1, get.last)
+deadrows<-which(is.na(LIOW$DeathDate)==F)
+for(r in deadrows){
+  if(l[r]<30){CH[r,l[r]+1]<-2}
+}
+CH.ms<-ifelse(CH==0,3,CH)
 
 
 

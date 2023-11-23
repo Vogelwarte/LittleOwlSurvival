@@ -436,7 +436,6 @@ recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
 recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
 recap.mat[year==2,(c(11,16)+7)] <- 2
 recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
-<<<<<<< HEAD:LIOW_telemetry_data_prep_reduced.r
 
 ## check that 0 effort and 0 sightings are in same columns
 which(apply(CH[LIOW$year==2009,],2,sum)==0)
@@ -462,8 +461,6 @@ l<- apply(CH, 1, get.last)
 n<-apply(CH,1,sum)
 ## flag all birds with internal zeros
 LIOW[which(((l-f+1)/n)>1),]
-=======
->>>>>>> main:LIOW_telemetry_data_prep.r
 
 ## check that 0 effort and 0 sightings are in same columns
 which(apply(CH[LIOW$year==2009,],2,sum)==0)

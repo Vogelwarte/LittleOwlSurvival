@@ -1,4 +1,3 @@
-<<<<<<< HEAD:LIOW_telemetry_survival_reduced.r
 ##########################################################################
 #
 # LITTLE OWL BIWEEKLY SURVIVAL ANALYSIS FROM TELEMETRY
