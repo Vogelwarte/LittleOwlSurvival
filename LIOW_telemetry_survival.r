@@ -234,7 +234,7 @@ ni=1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -472,7 +472,7 @@ ggplot(plotdat)+
 
 
 # ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
-# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
+# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 
 
 
@@ -529,7 +529,7 @@ Table1<- season.surv[c(1:2,6:7),] %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
 Table1
-#fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
+#fwrite(Table1,"C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 
 ### calculate what extreme winter represents in terms of snow cover
 (24+24+12)/140
