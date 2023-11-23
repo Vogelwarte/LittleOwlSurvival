@@ -13,6 +13,8 @@
 
 ## added simple summary for manuscript on 16 Oct 2023
 
+## UPDATED ON 22 NOV TO ALIGN RECAPTURE MATRIX (which had a mismatch between 0 effort observations and 0-recaps)
+
 library(tidyverse)
 library(data.table)
 library(lubridate)
@@ -378,7 +380,11 @@ year <- as.numeric(LIOW$year)-2008
 feeding <- ifelse(LIOW$feeding=="Unfed",0,1)
 #season<-c(rep(1,6),rep(2,10),rep(3,5),rep(4,2)) ## Dispersal x 6, Winter x 10, Incubation x 5, Brood rearing x 2
 #season<-c(rep(1,6),rep(2,10),rep(3,7)) ## Dispersal x 6, Winter x 10, Breeding x 7 - CHANGED ON 14 SEPT BECAUSE MS specifies only 3 stages
+<<<<<<< HEAD:LIOW_telemetry_data_prep_reduced.r
 season<-c(rep(1,6),rep(2,6),rep(3,10),rep(4,8)) ## Summer x 6, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 27 SEPT BECAUSE WE NOW INCLUDE THE WHOLE YEAR
+=======
+season<-c(rep(1,6),rep(2,6),rep(3,10),rep(4,8)) ## Summer x 6, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 22 NOV TO MATCH 30 OCCASIONS
+>>>>>>> main:LIOW_telemetry_data_prep.r
 
 winter<-ifelse(season==3,1,0) ## binary variable for winter 
 
@@ -422,12 +428,14 @@ sex[!(sex %in% c(0,1))]<-rbinom(n=sum(table(sex)[2:3]),size=1,prob=known.male.ra
 
 ## updated on 27 Sept by adding 7 encounter occasions
 ## changed on 12 Oct to 6 encounter occasions
+## changed on 22 Nov to align with 0 captures
 
 recap.mat<-matrix(1, nrow=nrow(CH),ncol=ncol(CH))
 
 recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
 recap.mat[year==2,(c(11,16)+7)] <- 2
 recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
+<<<<<<< HEAD:LIOW_telemetry_data_prep_reduced.r
 
 ## check that 0 effort and 0 sightings are in same columns
 which(apply(CH[LIOW$year==2009,],2,sum)==0)
@@ -453,7 +461,12 @@ l<- apply(CH, 1, get.last)
 n<-apply(CH,1,sum)
 ## flag all birds with internal zeros
 LIOW[which(((l-f+1)/n)>1),]
+=======
+>>>>>>> main:LIOW_telemetry_data_prep.r
 
+## check that 0 effort and 0 sightings are in same columns
+which(apply(CH[LIOW$year==2009,],2,sum)==0)
+which(apply(recap.mat[LIOW$year==2009,],2,max)==3)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -3,20 +3,20 @@ model {
 
 # Priors and constraints
 for (i in 1:nind){
-   for (t in f[i]:(n.occasions-1)){
+   for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
                         #beta.yr[year[i]] +
-                        beta.mass*weight[i] +
-                        beta.feed*feeding[i] + 
+                        beta.mass*weight[i]*pf[t] +
+                        beta.feed*feeding[i]*pf[t] + 
                         #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
                         beta.win*env[year[i],t] +
-                        beta.male*sex[i] +
-                        epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
+                        beta.male*sex[i]*pf[t] #+
+                        ##epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
 for (i in 1:nind){
-   epsilon[i] ~ dnorm(0, tau)
+   #epsilon[i] ~ dnorm(0, tau)
    epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
@@ -25,15 +25,15 @@ for (i in 1:nind){
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
-   mean.p[1] ~ dunif(0.9, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
    mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
    for (y in 1:2) {
     mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
-tau <- pow(sigma, -2)
+# sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
+# tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
 
@@ -63,8 +63,8 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t-1] * z[i,t])
-      y.rep[i,t] ~ dbern(p[i,t-1] * z.rep[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t]*nulleff.mat[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]*nulleff.mat[i,t]) # replicate y (observations)
 
     
     } #t end
@@ -72,10 +72,10 @@ for (i in 1:nind){
       
         ## GOODNESS OF FIT TEST SECTION
         ## Discrepancy observed data
-        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):n.occasions] * z[i,(f[i]+1):n.occasions]) + 0.001)
 
         ## Discrepancy replicated data
-        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
       
    } #i end
       fit <- sum(E.obs[])
