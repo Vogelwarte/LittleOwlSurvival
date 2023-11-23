@@ -7,7 +7,6 @@
 # based on data by Marco Perrig
 # stripped down very basic model to investigate why estimated survival is LOWER than observed survival
 
-## MAJOR PROBLEM IDENTIFIED: recap.mat is not aligned properly!!
 
 library(runjags)
 library(tidyverse)
@@ -197,7 +196,7 @@ inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.p = runif(1, 0.999, 1))}  
 
 # Call JAGS from R
-impute.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
+impute.model <- run.jags(data=INPUT.impute, inits=inits, monitor=parameters,
                         model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_perfect_p.jags",
                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                         method = "rjparallel") 
@@ -226,3 +225,23 @@ ggplot(GOF,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge(
 mean(GOF$P)
 
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# CALCULATE SURVIVAL MANUALLY
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### THE DISCREPANCY OCCURS BECAUSE ONLY FEW INDIVIDUALS CONTRIBUTE TO THE FIRST FEW SURVIVAL ESTIMATES
+## if all individuals started at occ 1 the product of occasion-specific survival and crude survival would be the same
+
+man.surv<-as.numeric(rep(0,(dim(CH.imp)[2]-1)))
+N.occ<-apply(CH.imp,2,sum)
+for (occ in 2:dim(CH.imp)[2]){
+  #man.surv[occ-1]<-apply(CH.imp[which(f<=(occ-1)),],2,sum)[occ]/apply(CH.imp[which(f<=(occ-1)),],2,sum)[occ-1]
+  man.surv[occ-1]<-apply(CH.imp[which(f<=(1)),],2,sum)[occ]/apply(CH.imp[which(f<=(1)),],2,sum)[occ-1]
+}
+prod(man.surv)
+sum(CH.imp[which(f<=(1)),30]) / dim(CH.imp[which(f<=(1)),])[1]
+
+
+
+View(CH.imp)
