@@ -15,6 +15,8 @@
 
 ## UPDATED ON 22 NOV TO ALIGN RECAPTURE MATRIX (which had a mismatch between 0 effort observations and 0-recaps)
 
+## UPDATED ON 23 NOV TO INCLUDE DEAD RECOVERY AND MULTIPLE STATES
+
 library(tidyverse)
 library(data.table)
 library(lubridate)
@@ -22,7 +24,6 @@ library(tidyverse)
 library(geosphere)
 filter<-dplyr::filter
 select<-dplyr::select
-library(MCMCvis)
 library(RMark)
 library(stringr)
 library(readxl)
@@ -435,6 +436,21 @@ recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 ## check that 0 effort and 0 sightings are in same columns
 which(apply(CH[LIOW$year==2009,],2,sum)==0)
 which(apply(recap.mat[LIOW$year==2009,],2,max)==3)
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# READ IN DEATH DATA AND ADJUST CH FOR MULTISTATE MODEL 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### CANNOT USE GINNY's master sheet because names and bird_ids DO NOT MATCH!!!
+## I can't match the two data frames because no common ID exists
+
+# deaths<-fread("data/Daily_VHF_all.csv") %>%
+#   filter(loc_status=="dead") %>%
+#   select(ring,NAME,ID,sex,DATE)
+# deaths$NAME %in% LIOW$bird_id
+
+
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

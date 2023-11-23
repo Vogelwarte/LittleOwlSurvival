@@ -1,0 +1,145 @@
+# multi-state model for little owls:
+# effect of lunar cycle at departure on survival
+
+# data:
+## obs: observation history matrix (nind x nocc) with the observations
+## first: date of deploying radio tag (= first marking)
+## nocc: number of capture occasions (months)
+
+# predictors:
+## sex: vector of length nind with values 1, 2 and NA
+## moonrad: lunar cycle at ntal range departure, in radian
+## season: autumn (1) / winter (2)
+## year: 1, 2, 3
+
+# states:
+#1 = alive inside the study area
+#2 = freshly dead inside the study area
+#3 = dead or emigrated
+
+# observations:
+#1 = observed inside the study area
+#2 = found freshly dead
+#3 = not seen nor found
+
+
+model{
+
+  ## transition probabilities
+for(i in 1:nind){
+
+  for(t in first[i]:(last[i]-1)){
+  ps[1,i,t,1] <- s[i,t]
+  ps[1,i,t,2] <- (1-s[i,t])*p2[i,t]
+  ps[1,i,t,3] <- (1-s[i,t])*(1-p2[i,t])
+
+  ps[2,i,t,1] <- 0
+  ps[2,i,t,2] <- 0
+  ps[2,i,t,3] <- 1
+ 
+  ps[3,i,t,1] <- 0
+  ps[3,i,t,2] <- 0
+  ps[3,i,t,3] <- 1
+
+## observation matrix
+  
+  po[1,i,t,1] <- p1[i,t]
+  po[1,i,t,2] <- 0
+  po[1,i,t,3] <- 1-p1[i,t]
+
+  po[2,i,t,1] <- 0
+  po[2,i,t,2] <- 1
+  po[2,i,t,3] <- 0
+
+  po[3,i,t,1] <- 0
+  po[3,i,t,2] <- 0
+  po[3,i,t,3] <- 1
+  
+  } # t
+} # i
+
+  ## likelihood
+
+  ## z is the matrix, indicating the state of individual i at time t 
+  ## obs is the observation matrix
+  for(i in 1:nind){
+   z[i,first[i]]<-1 #latent variable for first occasion
+   for(t in (first[i]+1):last[i]) {   
+      z[i,t] ~ dcat(ps[z[i,t-1], i, t-1,])
+      obs[i,t] ~ dcat(po[z[i,t], i, t-1,])
+    }
+  }
+
+  md ~ dcat(pmd[1:50]) 
+  moonrad <- moonradData[,md]
+ ## use one 'moonrad' from a matrix of 50 posterior draws from lunar cycle model
+
+  ## linear predictors
+  for(i in 1:nind){
+    ## impute unknown sexes
+     sex[i] ~ dcat(propsex[1:2])
+    
+    for(t in first[i]:(last[i]-1)){
+    
+    ## survival probability depends on lunar cycle at departure, sex, season, year
+                
+    logit(s[i,t]) <- c0[sex[i],season[t],year[i]] + 
+                     c1[sex[i],season[t]] * sin(moonrad[i]) +
+                     c2[sex[i],season[t]] * cos(moonrad[i])
+    # c1[sex[i],season[t]] * dist[i] # alternative model - depend on distance moved
+    #logit(f[i,t])<-f0[sex[i]]
+ 
+    ## detection probability depends
+    ## months and year (effort assigned by month/years)
+   # logit(p1[i,t]) <- a01[effort[year[i],t]]
+    p1[i,t] <- p01
+  #  logit(p2[i,t]) <- a02[effort[year[i],t]]
+   p2[i,t] <- p02
+    }
+  }
+
+  ## priors
+
+  propsex[1:2] ~ ddirch(alpha[1:2]) 
+    # Dirichlet distribution. sex is coded as 1 = f, 2 = m
+
+  pmd[1:50] ~  ddirch(alpha2[1:50]) 
+  
+  c0[1,1,1] ~ dunif(logit(0.50),logit(0.999))
+  c0[1,1,2] ~ dunif(logit(0.50),logit(0.999))
+  c0[1,1,3] ~ dunif(logit(0.50),logit(0.999))
+
+  c0[1,2,1] ~ dunif(logit(0.50),logit(0.999))
+  c0[1,2,2] ~ dunif(logit(0.50),logit(0.999))
+  c0[1,2,3] ~ dunif(logit(0.50),logit(0.999))
+
+  c0[2,1,1] ~ dunif(logit(0.50),logit(0.999))
+  c0[2,1,2] ~ dunif(logit(0.50),logit(0.999))
+  c0[2,1,3] ~ dunif(logit(0.50),logit(0.999))
+
+  c0[2,2,1] ~ dunif(logit(0.50),logit(0.999))
+  c0[2,2,2] ~ dunif(logit(0.50),logit(0.999))
+  c0[2,2,3] ~ dunif(logit(0.50),logit(0.999))
+
+  c1[1,1] ~ dnorm(0, 0.44)
+  c1[1,2] ~ dnorm(0, 0.44)
+  c1[2,1] ~ dnorm(0, 0.44)
+  c1[2,2] ~ dnorm(0, 0.44)
+
+  c2[1,1] ~ dnorm(0, 0.44)
+  c2[1,2] ~ dnorm(0, 0.44)
+  c2[2,1] ~ dnorm(0, 0.44)
+  c2[2,2] ~ dnorm(0, 0.44)
+ 
+ # f0[1] ~ dunif(logit(0.70),logit(0.99))
+ # f0[2] ~ dunif(logit(0.70),logit(0.99))
+  
+ # a01[1] ~ dnorm(0, 0.44)
+#  a01[2] ~ dnorm(0, 0.44)
+ 
+#  a02[1] ~ dnorm(0, 0.44)
+#  a02[2] ~ dnorm(0, 0.44)
+
+p01 ~ dunif (0,1)
+p02 ~ dunif (0,1)
+}
