@@ -429,7 +429,9 @@ recap.mat[year==1,(c(15,16,17,18)+7)] <- 2
 recap.mat[year==2,(c(11,16)+7)] <- 2
 recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 
-
+## check that 0 effort and 0 sightings are in same columns
+which(apply(CH[LIOW$year==2009,],2,sum)==0)
+which(apply(recap.mat[LIOW$year==2009,],2,max)==3)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SAVE WORKSPACE AND R ENVIRONMENT

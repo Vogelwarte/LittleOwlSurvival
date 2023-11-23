@@ -77,7 +77,7 @@ model {
 # Priors and constraints
 for (i in 1:nind){
    for (t in f[i]:(n.occasions)){
-      phi[i,t] <- pow(mean.phi,1/26)
+      phi[i,t] <- pow(mean.phi,1/26)   ## annual survival as 26th root of biweekly survival
       p[i,t] <- mean.p * recap.mat[i,t] 
       } #t
    } #i
@@ -108,11 +108,11 @@ for (i in 1:nind){
 
         ## GOODNESS OF FIT TEST SECTION
         ## Discrepancy observed data
-        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):n.occasions] * z[i,(f[i]+1):n.occasions]) + 0.001)
 
         ## Discrepancy replicated data
-        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
-
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+        
     } #i end
       fit <- sum(E.obs[])
       fit.rep <- sum(E.rep[])
@@ -152,17 +152,17 @@ nb <- 200
 nc <- 3
 nad<-100
 ns<-1000
-ni=1500
+ni<-1500
 
 # Call JAGS from R
 basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                        model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
+                        model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                         method = "rjparallel") 
 
 
 ### very crude annual survival estimate (everything constant)
-basic.model$summary$quantiles[1,c(1,3,5)]^26
+basic.model$summary$quantiles[1,c(1,3,5)]
 
 ### compare to actually OBSERVED survival
 sum(apply(CH[,c(29:30)],1,max)) / dim(CH)[1]
