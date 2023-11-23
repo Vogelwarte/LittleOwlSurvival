@@ -433,6 +433,29 @@ recap.mat[year==1,(c(14,19,20,21)+7)] <- 3
 which(apply(CH[LIOW$year==2009,],2,sum)==0)
 which(apply(recap.mat[LIOW$year==2009,],2,max)==3)
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# CHECK INTERNAL 0s AND WHETHER THEY COULD BE IMPUTED
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## first look at the animals from 2009 that survived at least 2 months
+CH[LIOW$year==2010,]
+CH[which(apply(CH[LIOW$year==2009,],1,sum)>5),]
+
+## check odd individual that went missing for 40 weeks!
+LIOW[32,]
+
+
+## create function to find individuals with internal zeros, by dividing sum over last-first occ
+get.first <- function(x) min(which(x!=0))
+get.last <- function(x) max(which(x!=0))
+f<- apply(CH, 1, get.first)
+l<- apply(CH, 1, get.last)
+n<-apply(CH,1,sum)
+## flag all birds with internal zeros
+LIOW[which(((l-f+1)/n)>1),]
+
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # SAVE WORKSPACE AND R ENVIRONMENT
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

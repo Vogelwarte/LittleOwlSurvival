@@ -70,7 +70,7 @@ get.first <- function(x) min(which(x!=0))
 
 
 # Specify model in JAGS language
-sink("models/LIOW_CJS_basic_p.jags")
+sink("models/LIOW_CJS_perfect_p.jags")
 cat("
 model {
 
@@ -78,12 +78,12 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions)){
       phi[i,t] <- pow(mean.phi,1/26)   ## annual survival as 26th root of biweekly survival
-      p[i,t] <- mean.p * recap.mat[i,t] 
+      p[i,t] <- mean.p #* recap.mat[i,t] 
       } #t
    } #i
    
    mean.phi ~ dbeta(10, 35)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
-   mean.p ~ dunif(0, 1)                     # Prior for mean recapture during full effort periods
+   mean.p ~ dunif(0.999, 1)                     # Prior for mean recapture during full effort periods
 
 # sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 # tau.p <- pow(sigma.p, -2)
@@ -156,7 +156,7 @@ ni<-1500
 
 # Call JAGS from R
 basic.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                        model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
+                        model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_basic_p.jags",
                         n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                         method = "rjparallel") 
 
@@ -168,6 +168,42 @@ basic.model$summary$quantiles[1,c(1,3,5)]
 sum(apply(CH[,c(29:30)],1,max)) / dim(CH)[1]
 sum(CH[,29]) / dim(CH)[1]
 
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# RE-RUN MODEL WITH INTERPOLATED INTERNAL ZEROs
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+### ENSURE REPEATABLE SCALING OF SNOWMAT ##
+CH.imp<-CH
+for (d in 1:nrow(CH)){
+  CH.imp[d,f[d]:l[d]]<-1
+}
+### check whether it worked
+f<- apply(CH.imp, 1, get.first)
+l<- apply(CH.imp, 1, get.last)
+n<-apply(CH.imp,1,sum)
+((l-f+1)/n)
+
+
+INPUT.impute <- list(y = CH.imp, f = f,
+              nind = dim(CH)[1],
+              n.occasions = dim(CH)[2],
+              recap.mat=ifelse(recap.mat==3,0,1),
+              z = known.state.cjs(CH))
+
+inits <- function(){list(z = cjs.init.z(CH, f),
+                         mean.phi = rbeta(1, 10, 35),
+                         mean.p = runif(1, 0.999, 1))}  
+
+# Call JAGS from R
+impute.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
+                        model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_perfect_p.jags",
+                        n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                        method = "rjparallel") 
+
+### very crude annual survival estimate (everything constant)
+impute.model$summary$quantiles[1,c(1,3,5)]
 
 
 
