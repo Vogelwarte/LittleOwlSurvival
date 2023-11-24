@@ -5,8 +5,8 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
-                        beta.mass*weight[i] +
-                        beta.feed*feeding[i] + 
+                        beta.mass*weight[i]*pf[t] +
+                        beta.feed*feeding[i]*pf[t] + 
                         beta.win*env[year[i],t] +
                         beta.male*sex[i] #+
                         ##epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
