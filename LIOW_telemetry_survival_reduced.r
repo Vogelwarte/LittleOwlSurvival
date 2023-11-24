@@ -38,6 +38,8 @@
 ## 16 NOV 2023 - NEED TO CURTAIL IND RANDOM EFFECT OR DO SOMETHING ELSE TO INCREASE ESTIMATED SURVIVAL
 ## parallelised projection of realised survival estimates
 
+## 24 NOV 2023: returned to this analysis after having exhausted all other options - only need to adjust extrapolation
+
 library(runjags)
 library(tidyverse)
 library(data.table)
@@ -60,7 +62,7 @@ library(doParallel)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
 try(setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival"),silent=T)
-try(setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival"),silent=T)
+try(setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival"),silent=T)
 # renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
 # renv::snapshot()
 
@@ -219,10 +221,10 @@ cjs.init.z <- function(ch,f){
 inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(4, 94, 5),
                          mean.p = c(runif(1, 0.71, 0.98),runif(1, 0.31, 0.89)),
-                         sigma = runif(1, 0, 1))}  
+                         sigma.p = runif(1, 0, 1))}  
 
 # Parameters monitored
-parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep","epsilon")
+parameters <- c("mu","mean.phi", "mean.p", "beta.yr","beta.male","beta.win","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
 
 # MCMC settings
 nt <- 6
@@ -230,11 +232,11 @@ nb <- 200
 nc <- 3
 nad<-100
 ns<-1000
-ni=1500
+ni<-1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_no_raneff.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
@@ -269,7 +271,7 @@ null.model$summary$quantiles[15,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p","beta.yr"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCtrace(full.model$mcmc)
 MCMCsummary(full.model$mcmc)
@@ -392,7 +394,7 @@ AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
   mutate(scaleweight=(weight-attr(weight_scale, 'scaled:scale'))/attr(weight_scale, 'scaled:scale')) %>% 
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
   mutate(scalesnow=(snow-snowmean)/snowsd) %>%
-  mutate(pf=ifelse(season==5,1,0))
+  mutate(pf=ifelse(season==1,1,0))
 
 Xin<-AnnTab
 

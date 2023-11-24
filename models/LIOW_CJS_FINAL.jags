@@ -63,8 +63,8 @@ for (i in 1:nind){
       z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
       z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
       # Observation process
-      y[i,t] ~ dbern(p[i,t] * z[i,t]*nulleff.mat[i,t])
-      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]*nulleff.mat[i,t]) # replicate y (observations)
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
 
     
     } #t end
