@@ -271,7 +271,7 @@ null.model$summary$quantiles[15,c(3,1,5)]
 
 
 #### MODEL ASSESSMENT ####
-MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p","beta.yr"))
+MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCplot(null.model$mcmc, params=c("mean.phi","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
 MCMCtrace(full.model$mcmc)
 MCMCsummary(full.model$mcmc)
@@ -385,16 +385,16 @@ MCMCout<-rbind(full.model$mcmc[[1]],full.model$mcmc[[2]],full.model$mcmc[[3]])
 #                    weight=c(-1,0,1),
 #                    sex=c(0,1),
 #                    snow=c(0,0,0,4,8,12,0))  %>% 
-AnnTab<-crossing(data.frame(season=c(1,2,3,3,3,3,4),
-                   age=c(45,98,180,190,200,210,300),
-                   snow=c(0,0,0,4,8,12,0)),
+AnnTab<-crossing(data.frame(season=c(1,2,3,4,4,4,4,5),
+                   age=c(20,45,98,180,190,200,210,300),
+                   snow=c(0,0,0,0,4,8,12,0)),
                    feeding=c(0,1),
                    weight=c(-45,0,35),  ## summary(weight)
                    sex=c(0,1)) %>%
   mutate(scaleweight=(weight-attr(weight_scale, 'scaled:scale'))/attr(weight_scale, 'scaled:scale')) %>% 
   mutate(scaleage=(age-attr(age_scale, 'scaled:scale')[10])/attr(age_scale, 'scaled:scale')[10]) %>% 
   mutate(scalesnow=(snow-snowmean)/snowsd) %>%
-  mutate(pf=ifelse(season==5,1,0))
+  mutate(pf=ifelse(season<3,1,0))
 
 Xin<-AnnTab
 
@@ -413,7 +413,7 @@ MCMCpred<-
     ##CALCULATE MONTHLY SURVIVAL
     mutate(logit.surv=as.numeric(MCMCout[s,grepl("mu",parmcols)])[season]+
              as.numeric(MCMCout[s,match("beta.mass",parmcols)])*scaleweight*pf +
-             as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
+             #as.numeric(MCMCout[s,match("beta.yr[3]",parmcols)])+   #*year + ### categorical year effect - pick the most average year
              as.numeric(MCMCout[s,match("beta.male",parmcols)])*sex*pf +
              as.numeric(MCMCout[s,match("beta.feed",parmcols)])*feeding*pf +
              as.numeric(MCMCout[s,match("beta.win",parmcols)])*scalesnow) %>%
@@ -422,9 +422,9 @@ MCMCpred<-
     mutate(surv=plogis(logit.surv)) %>%
     
     ## RENAME THE SEASONS
-    mutate(Season=ifelse(season==2,"Autumn",
-                         ifelse(season==3,"Winter",
-                                ifelse(season==4,"Spring","Summer")))) %>%
+    mutate(Season=ifelse(season==3,"Autumn",
+                         ifelse(season==4,"Winter",
+                                ifelse(season==5,"Spring","Summer")))) %>%
     mutate(simul=s)              
   
   #MCMCpred<-rbind(MCMCpred,as.data.frame(X)) 
@@ -437,12 +437,12 @@ plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
   filter(sex==0) %>%
   filter(weight==0) %>%
   filter(feeding==0) %>%
-  mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
+  mutate(age=rep(c(20,45,98,180,190,200,210,300), ns*nc)) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   #summarise(surv=mean(raw.surv,na.rm=T),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   ungroup() %>%
-  mutate(snow=c(0,0,0,0,4,8,12)) %>%
+  mutate(snow=c(0,0,0,0,0,4,8,12)) %>%
   arrange(age)
 
  
@@ -452,7 +452,7 @@ ggplot(plotdat)+
   
   ## format axis ticks
   #scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(3,5,8,10)], labels=plotdat$Season[c(3,5,8,10)]) +
-  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1,2,4,7)], labels=plotdat$Season[c(1,2,4,7)]) +
+  scale_x_continuous(name="Season", limits=c(1,365), breaks=plotdat$age[c(1,3,5,8)], labels=plotdat$Season[c(1,3,5,8)]) +
   scale_y_continuous(name="Biweekly survival probability", limits=c(0.5,1), breaks=seq(0.5,1,0.05), labels=seq(0.5,1,0.05)) +
   #scale_y_continuous(name="Monthly survival probability", limits=c(0.8,1), breaks=seq(0.,1,0.05)) +
   labs(y="Biweekly survival probability") +
@@ -486,7 +486,7 @@ ggplot(plotdat)+
 ### simplistic season survival ###
 ## this will however assume that extreme snow cover will persist for 20 weeks, which is unrealistic
 stage.surv<-  plotdat %>%
-  mutate(dur=c(5,6,10,10,10,10,5)) %>%
+  mutate(dur=c(1,2,6,10,10,10,10,7)) %>%
   mutate(surv=surv^dur,surv.lcl=surv.lcl^dur,surv.ucl=surv.ucl^dur)
 stage.surv
 
@@ -509,24 +509,24 @@ season.surv
 
 
 
-Table1<- season.surv[c(1:3,7),] %>%
+Table1<- season.surv[c(1:4,8),] %>%
   mutate(mild.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   mutate(Duration=dur*2) %>%
   select(Season,Duration,mild.survival) %>%
   bind_rows(data.frame(Season="Annual",Duration=52,
                        mild.survival=sprintf("%s (%s - %s)",
-                                        round(prod(season.surv[c(1:3,7),4]),3),
-                                        round(prod(season.surv[c(1:3,7),5]),3),
-                                        round(prod(season.surv[c(1:3,7),6]),3))))
+                                        round(prod(season.surv[c(1:4,8),4]),3),
+                                        round(prod(season.surv[c(1:4,8),5]),3),
+                                        round(prod(season.surv[c(1:4,8),6]),3))))
 
-Table1<- season.surv[c(1:2,6:7),] %>%
+Table1<- season.surv[c(1:3,7:8),] %>%
   mutate(harsh.survival=sprintf("%s (%s - %s)",round(surv,3),round(surv.lcl,3),round(surv.ucl,3))) %>%
   select(Season,harsh.survival) %>%
   bind_rows(data.frame(Season="Annual",
                        harsh.survival=sprintf("%s (%s - %s)",
-                                        round(prod(season.surv[c(1:2,6:7),4]),3),
-                                        round(prod(season.surv[c(1:2,6:7),5]),3),
-                                        round(prod(season.surv[c(1:2,6:7),6]),3))))  %>%
+                                        round(prod(season.surv[c(1:3,7:8),4]),3),
+                                        round(prod(season.surv[c(1:3,7:8),5]),3),
+                                        round(prod(season.surv[c(1:3,7:8),6]),3))))  %>%
   left_join(Table1, by="Season") %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
