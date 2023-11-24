@@ -77,7 +77,7 @@ load("data/LIOW_SURV_INPUT.RData")
 
 
 # Specify model in JAGS language
-sink("models/LIOW_CJS_no_raneff_pf.jags")
+sink("models/LIOW_CJS_FINAL_fixed.jags")
 cat("
 model {
 
@@ -85,23 +85,20 @@ model {
 for (i in 1:nind){
    for (t in f[i]:(n.occasions)){
       logit(phi[i,t]) <- mu[season[t]] +
-                        beta.yr[year[i]] +
-                        beta.mass*weight[i]*pf[t] +
-                        beta.feed*feeding[i]*pf[t] + 
-                        #beta.age*age[i,t] +   ## structure age so as to be only used for post-fledging phase
+                        beta.mass*weight[i] +
+                        beta.feed*feeding[i] + 
                         beta.win*env[year[i],t] +
-                        beta.male*sex[i]*pf[t] #+
-                        #epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
+                        beta.male*sex[i] #+
+                        ##epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
       logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
       } #t
    } #i
 for (i in 1:nind){
-   #epsilon[i] ~ dnorm(0, tau)
    epsilon.p[i] ~ dnorm(0, tau.p)
 }
    
   for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
-   mean.phi[s] ~ dbeta(94, 5)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+   mean.phi[s] ~ dbeta(95, 10)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
    mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
   }
    
@@ -112,20 +109,10 @@ for (i in 1:nind){
    }
   mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
 
-#sigma ~ dunif(0, 1)                      # Prior for standard deviation for random survival effect
-#tau <- pow(sigma, -2)
 sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
 tau.p <- pow(sigma.p, -2)
 
-for (y in 1:3) {
- beta.yr[y] ~ dnorm(0, 1)                     # Prior for year effect
- #beta.p.yr[y] ~ dnorm(0, 1)                 # Prior for ANNUAL DETECTION effect
-}
-
-#beta.size ~ dnorm(0, 1)                     # Prior for size effect 
-#beta.age ~ dnorm(0, 1)                     # Prior for age effect 
 beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
-#beta.simpleage ~ dnorm(0, 1)                # Prior for age offset (simple value for each bird according to age at 1 Aug) 
 beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
 beta.win ~ dunif(-2, 2)                     # Prior for winter weather effect, which we know is negative
 beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
@@ -152,15 +139,16 @@ for (i in 1:nind){
       
         ## GOODNESS OF FIT TEST SECTION
         ## Discrepancy observed data
-        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z[i,(f[i]+1):n.occasions]) + 0.001)
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):n.occasions] * z[i,(f[i]+1):n.occasions]) + 0.001)
 
         ## Discrepancy replicated data
-        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,f[i]:(n.occasions-1)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
       
    } #i end
       fit <- sum(E.obs[])
       fit.rep <- sum(E.rep[])
 }
+
 ",fill = TRUE)
 sink()
 
@@ -236,7 +224,7 @@ ni<-1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL.jags",
+                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_fixed.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
