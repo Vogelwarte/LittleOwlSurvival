@@ -294,7 +294,7 @@ allcov %>% gather(key='OCC', value=ORIGvalue, -year,-variable) %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD DATA FROM MARK INP DATA FILE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
+#setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
 #setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival")
 
 LIOWch<-convert.inp(inp.filename='data/1st year.inp',
@@ -473,12 +473,13 @@ LIOW[which(((l-f+1)/n)>1),]
 # deaths$NAME %in% LIOW$bird_id
 
 ### insert death as number 2 in CH for birds found dead
-l<- apply(CH, 1, get.last)
+CH.ms<-CH
+l<- apply(CH.ms, 1, get.last)
 deadrows<-which(is.na(LIOW$DeathDate)==F)
 for(r in deadrows){
-  if(l[r]<30){CH[r,l[r]+1]<-2}
+  if(l[r]<30){CH.ms[r,l[r]+1]<-2}
 }
-CH.ms<-ifelse(CH==0,3,CH)
+CH.ms<-ifelse(CH.ms==0,3,CH.ms)
 
 
 
