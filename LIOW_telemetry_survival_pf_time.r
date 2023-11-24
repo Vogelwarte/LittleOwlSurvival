@@ -57,8 +57,8 @@ library(doParallel)
 # LOAD DATA FROM PREPARED WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### data preparation moved to LIOW_telemetry_data_prep.r
-setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
-setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival")
+try(setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival"),silent=T)
+try(setwd("C:/STEFFEN/OneDrive - Vogelwarte/General/ANALYSES/LittleOwlSurvival"),silent=T)
 # renv::init()   ### need to re-run this when you add a new library that needs to be run on the server
 # renv::snapshot()
 
@@ -218,7 +218,7 @@ cjs.init.z <- function(ch,f){
   return(ch)
 }
 
-inits <- function(){list(#z = cjs.init.z(CH, f),
+inits <- function(){list(z = cjs.init.z(CH, f),
                          mean.phi = rbeta(5, 94, 5),
                          mean.p = runif(1, 0.3, 0.98),
                          sigma.p = runif(1, 0, 1))}  
