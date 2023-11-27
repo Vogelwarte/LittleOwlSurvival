@@ -224,20 +224,19 @@ ni<-1500
 
 # Call JAGS from R
 full.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_fixed.jags",
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_fixed.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
                     method = "rjparallel") 
 
-## fitted in R2jags to retrieve sims.list for GoF test - later abandoned
-# full.model <- R2jags::jags(data=INPUT, inits=inits, parameters.to.save=parameters,
-#                        model.file="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/LIOW_CJS_model_GoF.jags",
-#                    n.iter=ni, n.chains = nc, n.thin = nt, n.burnin = nb, DIC=T) 
-
-parameters <- c("mu","mean.phi", "mean.p", "beta.male","beta.mass","beta.feed","beta.p.win","deviance","fit","fit.rep")
-null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
-                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_null.jags",
+seasonweight.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
+                    model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_seasonweight.jags",
                     n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
-                    method = "rjparallel") 
+                    method = "rjparallel")
+
+seasonfeed.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
+                       model="C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/models/LIOW_CJS_FINAL_seasonfeed.jags",
+                       n.chains = nc, thin = nt, burnin = nb, adapt = nad,sample = ns, 
+                       method = "rjparallel") 
 
 
 #### MODEL COMPARISON ####
@@ -252,29 +251,38 @@ null.model <- run.jags(data=INPUT, inits=inits, monitor=parameters,
 # t.test(x=dic.full$deviance+dic.full$penalty,y=dic.null$deviance+dic.null$penalty)
 
 ## manual calculation SHOWS CLEAR DIFFERENCE IN deviance
-## full model has lower deviance than null model (including penalty of additional parameter) - hence is supported
-full.model$summary$quantiles[16,c(3,1,5)] +2 <
-null.model$summary$quantiles[15,c(3,1,5)]
-
+full.model$summary$quantiles[16,c(3,1,5)]
+seasonweight.model$summary$quantiles[19,c(3,1,5)]+6 ### 3 parameters more in this model
+seasonfeed.model$summary$quantiles[19,c(3,1,5)]+6 ### 3 parameters more in this model
 
 
 #### MODEL ASSESSMENT ####
 MCMCplot(full.model$mcmc, params=c("mean.phi","beta.win","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
-MCMCplot(null.model$mcmc, params=c("mean.phi","beta.male","beta.mass","beta.feed","beta.p.win","mean.p"))
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Fig_S1_parameter_estimates.jpg", height=11, width=8)
+# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_S1_parameter_estimates.jpg", height=11, width=8)
+
+MCMCplot(seasonfeed.model$mcmc, params=c("mean.phi","beta.mass","beta.feed"))
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Fig_S2_parameter_estimates.jpg", height=11, width=8)
+# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_S2_parameter_estimates.jpg", height=11, width=8)
+
+MCMCplot(seasonweight.model$mcmc, params=c("mean.phi","beta.mass","beta.feed"))
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Fig_S3_parameter_estimates.jpg", height=11, width=8)
+# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_S3_parameter_estimates.jpg", height=11, width=8)
+
+
 MCMCtrace(full.model$mcmc)
 MCMCsummary(full.model$mcmc)
-MCMCsummary(null.model$mcmc)
 MCMCdiag(full.model$mcmc,
          round = 3,
          file_name = 'LIOW_survival',
          dir = 'C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output',
-         mkdir = 'LIOW_v6',
-         add_field = '6.0',
+         mkdir = 'LIOW_v8',
+         add_field = '8.0',
          add_field_names = 'Data version',
          save_obj = TRUE,
-         obj_name = 'LIOW-fit-19Oct2023',
+         obj_name = 'LIOW-fit-27Nov2023',
          add_obj = list(INPUT, sessionInfo()),
-         add_obj_names = c('surv-data-19Oct2023', 'session-info-19Oct2023'))
+         add_obj_names = c('surv-data-27Nov2023', 'session-info-27Nov2023'))
 
 
 
@@ -339,18 +347,6 @@ ggplot(GOF,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge(
 mean(GOF$P)
 
 
-## CHECK WHETHER NULL MODEL FITS THE DATA
-OBS.null <- MCMCpstr(null.model$mcmc, params=c("fit"), type="chains")
-REP.null <- MCMCpstr(null.model$mcmc, params=c("fit.rep"), type="chains")
-GOF.null<-tibble(Rep=as.numeric(REP.null[[1]]),Obs=as.numeric(OBS.null[[1]])) %>%
-  mutate(P=ifelse(Obs>Rep,1,0))
-
-ggplot(GOF.null,aes(x=Rep,y=Obs, fill=P)) + geom_point(position=position_jitterdodge()) +
-  geom_abline(intercept = 0, slope = 1) +
-  theme(legend.position="none") +
-  annotate("text",label=as.character(round(mean(GOF.null$P),2)),x=20,y=20)
-
-mean(GOF.null$P)
 
 
 
@@ -461,7 +457,7 @@ ggplot(plotdat)+
         strip.background=element_rect(fill="white", colour="black"))
 
 
-# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output/Seasonal_survival_LIOW.jpg", height=7, width=11)
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 # ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_1.jpg", height=7, width=11)
 
 
@@ -522,6 +518,7 @@ Table1<- season.surv[c(1:2,6:7),] %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
 Table1
+#fwrite(Table1,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 #fwrite(Table1,"C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table1_surv.csv")
 
 ### calculate what extreme winter represents in terms of snow cover
@@ -580,6 +577,7 @@ TableS2<- harsh.winter.surv %>%
 
 TableS2
 #fwrite(TableS2,"C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
+#fwrite(TableS2,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/TableS2_surv.csv")
 
 
 
@@ -590,7 +588,7 @@ TableS2
 
 ### CALCULATE REDUCTION IN % ###
 Table1
-(0.194-0.129)/0.194
+(0.192-0.129)/0.192
 
 
 
