@@ -1,0 +1,74 @@
+
+model {
+
+# Priors and constraints
+for (i in 1:nind){
+   for (t in f[i]:(n.occasions)){
+      logit(phi[i,t]) <- mu[season[t]] +
+                        beta.mass*weight[i]*pf[t] +
+                        beta.feed*feeding[i]*pf[t] + 
+                        beta.win*env[year[i],t] +
+                        beta.spring*winter[year[i]]*sp[t] +
+                        beta.male*sex[i] #+
+                        ##epsilon[i]    ##  beta.simpleage*simpleage[i] + beta.mass*weight[i] + beta.size*size[i] + 
+      logit(p[i,t]) <- mu.p[recap.mat[i,t]] + beta.p.win*env[year[i],t] + epsilon.p[i]  ##  beta.p.yr[year[i]] + 
+      } #t
+   } #i
+for (i in 1:nind){
+   epsilon.p[i] ~ dnorm(0, tau.p)
+}
+   
+  for (s in 1:4){   ### baseline for the 3 seasons dispersal, winter, breeding
+   mean.phi[s] ~ dbeta(95, 10)                   # Prior for mean biweekly survival from Thorup et al. 2013, converted to beta
+   mu[s] <- log(mean.phi[s] / (1-mean.phi[s]))       # Logit transformation
+  }
+   
+   mean.p[1] ~ dunif(0.7, 1)                     # Prior for mean recapture during full effort periods
+   mean.p[2] ~ dunif(0.3, 0.9)                  # Prior for mean recapture during reduced effort periods
+   for (y in 1:2) {
+    mu.p[y] <- log(mean.p[y] / (1-mean.p[y]))       # Logit transformation 
+   }
+  mu.p[3] <- -999999999999999999      # recapture probability of zero on logit scale 
+
+sigma.p ~ dunif(0, 2)                      # Prior for standard deviation for random detection effect
+tau.p <- pow(sigma.p, -2)
+
+beta.mass ~ dnorm(0, 1)                     # Prior for mass effect
+beta.male ~ dnorm(0, 1)                     # Prior for sex effect (for males, females are 0)
+beta.win ~ dunif(-2, 2)                     # Prior for winter weather effect, which we know is negative
+beta.spring ~ dunif(-2, 2)                     # Prior for spring carryover effect, which could be positive or negative
+beta.p.win ~ dnorm(0, 1)                     # Prior for winter weather DETECTION effect
+beta.feed ~ dnorm(0, 1)                # Prior for effect of supplementary feeding
+
+
+# Likelihood 
+for (i in 1:nind){
+   # Define latent state at first capture
+   z[i,f[i]] <- 1
+   z.rep[i,f[i]] <- 1 # replicate z (true state)
+   y.rep[i,f[i]] <- 1 # replicate y (data)
+   for (t in (f[i]+1):n.occasions){
+      # State process
+      z[i,t] ~ dbern(phi[i,t-1] * z[i,t-1])
+      z.rep[i,t] ~ dbern(phi[i,t-1] * z.rep[i,t-1]) # replicate z (true state)
+      # Observation process
+      y[i,t] ~ dbern(p[i,t] * z[i,t])
+      y.rep[i,t] ~ dbern(p[i,t] * z.rep[i,t]) # replicate y (observations)
+
+    
+    } #t end
+      #Derived parameters
+      
+        ## GOODNESS OF FIT TEST SECTION
+        ## Discrepancy observed data
+        E.obs[i] <- pow((sum(y[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):n.occasions] * z[i,(f[i]+1):n.occasions]) + 0.001)
+
+        ## Discrepancy replicated data
+        E.rep[i] <- pow((sum(y.rep[i,(f[i]+1):n.occasions]) - sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions])), 2) / (sum(p[i,(f[i]+1):(n.occasions)] * z.rep[i,(f[i]+1):n.occasions]) + 0.001)
+      
+   } #i end
+      fit <- sum(E.obs[])
+      fit.rep <- sum(E.rep[])
+}
+
+
