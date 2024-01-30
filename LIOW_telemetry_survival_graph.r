@@ -139,5 +139,19 @@ ggplot(aes(x=Date, y=med.N,ymin=lcl.N, ymax=ucl.N, colour=Condition, fill=Condit
         strip.background=element_rect(fill="white", colour="black"))
 
 
-# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_4.jpg", height=11, width=7)
-# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_4.jpg", height=11, width=7)
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_4.jpg", height=7, width=11)
+# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_4.jpg", height=7, width=11)
+
+
+
+
+##### SUMMARIES FOR TEXT ##########
+
+finsurv<-AnnualSurvival %>%
+  mutate(Condition=ifelse(feeding==0,"natural","food supplemented")) %>%
+  mutate(Date=ymd("2010-05-01")+weeks(Fortnight*2)) %>% filter(Fortnight==26)
+
+1-(finsurv[1,6]/finsurv[3,6])
+1-(finsurv[2,6]/finsurv[4,6])
+1-(finsurv[1,6]/finsurv[2,6])
+1-(finsurv[3,6]/finsurv[4,6])
