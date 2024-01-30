@@ -418,10 +418,10 @@ MCMCpred<-
 ### CREATE PLOT
 
 plotdat<-  MCMCpred %>% rename(raw.surv=surv) %>%
-  filter(sex==1) %>%
+  #filter(sex==1) %>%
   filter(scaleweight==0) %>%
   filter(feeding==0) %>%
-  mutate(age=rep(c(45,98,180,190,200,210,300), ns*nc)) %>%
+  mutate(age=rep(rep(c(45,98,180,190,200,210,300), ns*nc,each=2))) %>%
   group_by(Season,age,snow) %>%
   summarise(surv=quantile(raw.surv,0.5),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
   #summarise(surv=mean(raw.surv,na.rm=T),surv.lcl=quantile(raw.surv,0.025),surv.ucl=quantile(raw.surv,0.975)) %>%
@@ -588,7 +588,7 @@ TableS2
 
 ### CALCULATE REDUCTION IN % ###
 Table1
-(0.192-0.129)/0.192
+(0.178-0.117)/0.178
 
 
 

@@ -26,8 +26,8 @@ try(setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/Lit
 try(setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival"),silent=T)
 load("LIOW_survival_output.RData")
 head(MCMCpred)
-seasons<-data.frame(season=c(rep(1,4),rep(2,6),rep(3,10),rep(4,6)), ## Summer x 6, Autumn x 6, Winter x 10, Spring x 7 - CHANGED ON 22 NOV TO MATCH 30 OCCASIONS
-                    Fortnight=seq(1,26,1))
+seasons<-data.frame(season=c(rep(1,4),rep(2,6),rep(3,10),rep(4,7)), ## Summer x 4, Autumn x 6, Winter x 10, Spring x 6 - MATCH TABLE 1 in manuscript
+                    Fortnight=seq(1,27,1))
 
 
 
@@ -36,7 +36,7 @@ seasons<-data.frame(season=c(rep(1,4),rep(2,6),rep(3,10),rep(4,6)), ## Summer x 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ### after initial screening decided to remove sex
 
-AnnualSurvival<-crossing(Fortnight=seq(1,26,1),
+AnnualSurvival<-crossing(Fortnight=seq(1,27,1),
                            feeding=c(0,1), 
                            #sex=c(0,1),
                            winter=c("mild","harsh")) %>%
@@ -47,7 +47,7 @@ AnnualSurvival<-crossing(Fortnight=seq(1,26,1),
                                    ifelse(Fortnight %in% c(19,20),12,0))))) %>%
   mutate(med.N=ifelse(Fortnight==1,100,NA),lcl.N=ifelse(Fortnight==1,100,NA),ucl.N=ifelse(Fortnight==1,100,NA))
 
-
+AnnualSurvival %>% filter(winter=='harsh' & feeding==0 & season==3)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOOP OVER EACH SCENARIO TO SAMPLE SURVIVORS
@@ -58,7 +58,7 @@ AnnualSurvival<-crossing(Fortnight=seq(1,26,1),
 #for (s in c(0,1)){  ### different sexes
   for(f in c(0,1)) { ### different feeding regimes
     for(w in c("mild","harsh")){ ### snow conditions
-      for(t in 1:26){  ### for every fortnight
+      for(t in 1:27){  ### for every fortnight
         surv.est.fort<-MCMCpred %>%
           #filter(sex==s) %>%
           filter(feeding==f) %>%
@@ -111,10 +111,10 @@ AnnualSurvival<-crossing(Fortnight=seq(1,26,1),
 
 AnnualSurvival %>%
   mutate(Condition=ifelse(feeding==0,"natural","food supplemented")) %>%
-  mutate(Date=ymd("2010-05-01")+weeks(Fortnight*2)) %>%
+  mutate(Date=ymd("2010-04-19")+weeks(Fortnight*2)) %>%
 
 ggplot(aes(x=Date, y=med.N,ymin=lcl.N, ymax=ucl.N, colour=Condition, fill=Condition, linetype=Condition))+
-  geom_line(size=1.5) +
+  geom_line(linewidth=1.5) +
   geom_ribbon(alpha=0.4, colour=NA)+
   facet_wrap(~winter, ncol=2)+
   
@@ -139,8 +139,8 @@ ggplot(aes(x=Date, y=med.N,ymin=lcl.N, ymax=ucl.N, colour=Condition, fill=Condit
         strip.background=element_rect(fill="white", colour="black"))
 
 
-# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_4.jpg", height=7, width=11)
-# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_4.jpg", height=7, width=11)
+# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_2.jpg", height=7, width=11)
+# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_2.jpg", height=7, width=11)
 
 
 
@@ -149,7 +149,7 @@ ggplot(aes(x=Date, y=med.N,ymin=lcl.N, ymax=ucl.N, colour=Condition, fill=Condit
 
 finsurv<-AnnualSurvival %>%
   mutate(Condition=ifelse(feeding==0,"natural","food supplemented")) %>%
-  mutate(Date=ymd("2010-05-01")+weeks(Fortnight*2)) %>% filter(Fortnight==26)
+  mutate(Date=ymd("2010-05-01")+weeks(Fortnight*2)) %>% filter(Fortnight==27)
 
 1-(finsurv[1,6]/finsurv[3,6])
 1-(finsurv[2,6]/finsurv[4,6])
