@@ -503,3 +503,12 @@ length(unique(gsub("\\..*","",LIOWpf$bird_id))) ### number of broods
 ### CALCULATE PRIMITIVE SURVIVAL AS % OF INDIVIDUALS RECORDED IN LAST OCCASION - important for first line in manuscript
 sum(y[,dim(y)[2]])/dim(y)[1]
 
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# CHECK SURVIVAL OF ONE IMMIGRANT
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Der Jungkauz mit der Ringnummer HF-64935 wurde im 2011 besendert (in Familie 2011RE047) und wurde dann in Schwaikheim (in einem angrenzenden Untersuchungsgebiet) im März 2013 in einer Röhre wiedergefangen.
+## Dieser Vogel hat also sicher als «überlebend» gezählt werden.
+
+LIOW %>% filter(Ring=="HF-64935")
+
