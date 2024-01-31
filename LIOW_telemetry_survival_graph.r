@@ -15,7 +15,7 @@ library(tidyverse)
 filter<-dplyr::filter
 select<-dplyr::select
 library(scales)
-
+library(janitor)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -142,6 +142,33 @@ ggplot(aes(x=Date, y=med.N,ymin=lcl.N, ymax=ucl.N, colour=Condition, fill=Condit
 # ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_2.jpg", height=7, width=11)
 # ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_2.jpg", height=7, width=11)
 
+
+
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# SUMARY TABLE HOW MANY % DIED PER SEASON
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Table2<-
+AnnualSurvival %>% group_by(season, feeding, winter) %>%
+  summarise(min=min(med.N), start=max(med.N)) %>%
+  arrange(feeding, winter, season, start) %>%
+  ungroup() %>%
+  mutate(end=dplyr::lead(start, n=1)) %>%
+  mutate(end=ifelse(is.na(end),min,end)) %>%
+  mutate(end=ifelse(end==100,min,end)) %>%
+  mutate(loss=start-end) %>%
+  group_by(feeding,winter) %>%
+  mutate(prop.loss=(loss/sum(loss))*100) %>%
+  ungroup() %>%
+  mutate(group=paste(feeding,winter,sep="_")) %>%
+  select(season, group,prop.loss) %>%
+  spread(key=group, value=prop.loss) %>%
+  select(season,`0_mild`,`0_harsh`,`1_mild`,`1_harsh`) %>%
+  janitor::adorn_totals()
+
+#fwrite(Table2,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table2_surv.csv")
+#fwrite(Table2,"C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table2_surv.csv")
 
 
 
