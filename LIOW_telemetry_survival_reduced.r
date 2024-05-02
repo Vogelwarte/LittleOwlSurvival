@@ -247,17 +247,17 @@ MCMCplot(seasonweight.model$mcmc, params=c("mean.phi","beta.mass","beta.feed"))
 
 MCMCtrace(full.model$mcmc)
 MCMCsummary(full.model$mcmc)
-MCMCdiag(full.model$mcmc,
-         round = 3,
-         file_name = 'LIOW_survival',
-         dir = 'C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output',
-         mkdir = 'LIOW_v9',
-         add_field = '9.0',
-         add_field_names = 'Data version',
-         save_obj = TRUE,
-         obj_name = 'LIOW-fit-02May2023',
-         add_obj = list(INPUT, sessionInfo()),
-         add_obj_names = c('surv-data-27Nov2023', 'session-info-27Nov2023'))
+# MCMCdiag(full.model$mcmc,
+#          round = 3,
+#          file_name = 'LIOW_survival',
+#          dir = 'C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival/output',
+#          mkdir = 'LIOW_v9',
+#          add_field = '9.0',
+#          add_field_names = 'Data version',
+#          save_obj = TRUE,
+#          obj_name = 'LIOW-fit-02May2023',
+#          add_obj = list(INPUT, sessionInfo()),
+#          add_obj_names = c('surv-data-27Nov2023', 'session-info-27Nov2023'))
 
 
 
@@ -445,6 +445,7 @@ Table1<- season.surv[c(1:2,6:7),] %>%
   select(Season,Duration,mild.survival,harsh.survival)
 
 Table1
+#fwrite(Table1,"output/Table1.csv")
 
 ### calculate what extreme winter represents in terms of snow cover
 (24+24+12)/140
@@ -501,11 +502,10 @@ TableS2<- harsh.winter.surv %>%
   select(Supplemented,Sex,Mass,Season,mild.survival,harsh.survival)
 
 TableS2
+#fwrite(TableS2,"output/TableS2.csv")
 
 
-
-# save.image("LIOW_survival_output.RData")
-# load("LIOW_survival_output.RData")
+# save.image("output/LIOW_survival_output.RData")
 
 
 ### CALCULATE REDUCTION IN % ###
