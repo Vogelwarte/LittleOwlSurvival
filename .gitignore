@@ -22,6 +22,8 @@ data/*.csv
 
 # RStudio files
 .Rproj.user/
+.Rprofile
+renv.lock
 
 
 # R Environment Variables
