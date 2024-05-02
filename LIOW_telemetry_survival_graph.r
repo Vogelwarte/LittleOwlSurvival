@@ -21,10 +21,9 @@ library(janitor)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # LOAD DATA FROM PREPARED WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-### data preparation moved to LIOW_telemetry_data_prep.r
-try(setwd("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival"),silent=T)
-try(setwd("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/ANALYSES/LittleOwlSurvival"),silent=T)
-load("LIOW_survival_output.RData")
+### data analysis in LIOW_telemetry_survival_reduced.r
+
+load("output/LIOW_survival_output.RData")
 head(MCMCpred)
 seasons<-data.frame(season=c(rep(1,4),rep(2,6),rep(3,10),rep(4,7)), ## Summer x 4, Autumn x 6, Winter x 10, Spring x 6 - MATCH TABLE 1 in manuscript
                     Fortnight=seq(1,27,1))
@@ -139,8 +138,7 @@ ggplot(aes(x=Date, y=med.N,ymin=lcl.N, ymax=ucl.N, colour=Condition, fill=Condit
         strip.background=element_rect(fill="white", colour="black"))
 
 
-# ggsave("C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_2.jpg", height=7, width=11)
-# ggsave("C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Fig_2.jpg", height=7, width=11)
+# ggsave("output/Fig_2.jpg", height=7, width=11)
 
 
 
@@ -167,8 +165,7 @@ AnnualSurvival %>% group_by(season, feeding, winter) %>%
   select(season,`0_mild`,`0_harsh`,`1_mild`,`1_harsh`) %>%
   janitor::adorn_totals()
 
-#fwrite(Table2,"C:/Users/sop/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table2_surv.csv")
-#fwrite(Table2,"C:/STEFFEN/OneDrive - Vogelwarte/General - Little owls/MANUSCRIPTS/LittleOwlSurvival/Table2_surv.csv")
+#fwrite(Table2,"output/Table2_surv.csv")
 
 
 
