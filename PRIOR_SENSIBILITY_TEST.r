@@ -40,7 +40,7 @@ FAKEDATA %>% full_join(INPUT, by='simul',relationship = "many-to-many") %>%
            beta.win*(win) +       ### survival dependent on winter weather (scaled)
            beta.male*(sex) +     ### survival dependent on sex
            beta.feed*(feed) +     ### survival dependent on age on 1 Aug (scaled)
-            surv.raneff +
+           # surv.raneff +
            lp.mean) %>%        ### intercept for mean survival 
   mutate(phi=plogis(logit_phi)) %>%
   mutate(win=as.factor(win)) %>%
